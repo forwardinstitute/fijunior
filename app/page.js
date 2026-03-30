@@ -47,7 +47,9 @@ export default function App() {
     if (!player) return
 
     const newBalance = player.coins + coinsEarned
-    const newTotal = player.total_coins_earned + coinsEarned
+    const newTotal = coinsEarned > 0
+      ? player.total_coins_earned + coinsEarned
+      : player.total_coins_earned
 
     const updateData = {
       coins: newBalance,
@@ -86,7 +88,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#fcf2e3]">
+    <div className="min-h-screen bg-day">
       <TopBar player={player} coinAnimation={coinAnimation} onSignOut={handleSignOut} />
 
       {screen === 'hub' && (
@@ -130,12 +132,12 @@ function SignInScreen({ onSignIn, loading, error }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#fcf2e3] to-[#e8f0e8] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-day to-forest/10 p-4">
       <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         <div className="text-center mb-8">
-          <img src="https://a.storyblok.com/f/286772795909088/1172x1172/8547317449/fi-icon.png" alt="Forward Institute" className="w-16 h-16 mx-auto mb-4" />
-          <h1 className="text-4xl font-bold text-gray-900">Forward Institute</h1>
-          <p className="text-gray-600 mt-2">Work Experience Platform</p>
+          <img src="https://a.storyblok.com/f/286772795909088/1172x1172/8547317449/fi-icon.png" alt="Forward HQ" className="w-16 h-16 mx-auto mb-4" />
+          <h1 className="text-4xl font-bold text-forest">Forward HQ</h1>
+          <p className="text-gray-600 mt-2">Your work experience adventure starts here</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -145,7 +147,7 @@ function SignInScreen({ onSignIn, loading, error }) {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#195e47]"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
               disabled={loading}
             />
           </div>
@@ -153,15 +155,15 @@ function SignInScreen({ onSignIn, loading, error }) {
           <button
             type="submit"
             disabled={loading || !name.trim()}
-            className="w-full bg-[#195e47] text-white py-3 rounded-lg font-semibold hover:bg-[#124a38] disabled:opacity-50 transition"
+            className="w-full bg-forest text-white py-3 rounded-lg font-semibold hover:opacity-90 disabled:opacity-50 transition"
           >
-            {loading ? 'Signing in...' : 'Enter Forward Institute'}
+            {loading ? 'Signing in...' : 'Enter Forward HQ'}
           </button>
         </form>
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-center">{error}</p>
+          <div className="mt-6 p-4 bg-earth/20 border border-earth rounded-lg">
+            <p className="text-earth text-center">{error}</p>
           </div>
         )}
       </div>
@@ -178,7 +180,7 @@ function TopBar({ player, coinAnimation, onSignOut }) {
       <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <img src="https://a.storyblok.com/f/286772795909088/1172x1172/8547317449/fi-icon.png" alt="Forward Institute" className="h-10 w-10" />
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#195e47] to-[#124a38] flex items-center justify-center text-white font-bold text-lg shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-lg shrink-0">
             {player.avatar_url ? (
               <img src={player.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
             ) : (
@@ -198,7 +200,7 @@ function TopBar({ player, coinAnimation, onSignOut }) {
           </div>
           <button
             onClick={onSignOut}
-            className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition font-medium"
+            className="px-4 py-2 bg-earth/20 text-earth rounded-lg hover:bg-earth/30 transition font-medium"
           >
             Sign Out
           </button>
@@ -210,41 +212,164 @@ function TopBar({ player, coinAnimation, onSignOut }) {
 
 // HUB SCREEN
 function HubScreen({ player, onNavigate }) {
+  const level = calculateLevel(player.total_coins_earned)
+  const nextLevelCoins = getNextLevelThreshold(player.total_coins_earned)
+  const progressPercent = Math.round((player.total_coins_earned / nextLevelCoins) * 100)
+
   const rooms = [
-    { id: 'desk', title: 'Your Desk', emoji: '🏢', color: 'from-[#195e47] to-[#124a38]' },
+    {
+      id: 'desk',
+      title: 'Your Desk',
+      emoji: '🏢',
+      color: 'from-forest to-forest/80',
+      description: 'Customize your workspace and check your progress',
+      category: 'personal'
+    },
     {
       id: 'classifier',
       title: 'Contact Classifier',
       emoji: '👥',
-      color: 'from-[#dd6945] to-[#c45a3a]',
+      color: 'from-earth to-earth/80',
+      description: 'Classify business contacts by type and relationship',
       locked: player.age < 12,
+      category: 'work',
+      earnsCoins: true
     },
-    { id: 'logohunt', title: 'Logo Hunt', emoji: '🔍', color: 'from-[#85d1e3] to-[#5bb8cc]' },
-    { id: 'arcade', title: 'The Arcade', emoji: '🎮', color: 'from-[#ffcc12] to-[#e6b800]' },
-    { id: 'breakroom', title: 'The Break Room', emoji: '☕', color: 'from-[#dd6945] to-[#c45a3a]' },
-    { id: 'boardroom', title: 'The Boardroom', emoji: '📊', color: 'from-[#195e47] to-[#124a38]' },
-    { id: 'shop', title: 'The Shop', emoji: '🛍️', color: 'from-[#85d1e3] to-[#5bb8cc]' },
+    {
+      id: 'logohunt',
+      title: 'Logo Hunt',
+      emoji: '🔍',
+      color: 'from-sky to-sky/80',
+      description: 'Find and capture company logos',
+      category: 'work',
+      earnsCoins: true
+    },
+    {
+      id: 'arcade',
+      title: 'The Arcade',
+      emoji: '🎮',
+      color: 'from-sunshine to-yellow-400',
+      description: 'Play games and rack up coins',
+      category: 'fun'
+    },
+    {
+      id: 'breakroom',
+      title: 'The Break Room',
+      emoji: '☕',
+      color: 'from-pink-400 to-pink-500',
+      description: 'Relax with word games and puzzles',
+      category: 'fun'
+    },
+    {
+      id: 'boardroom',
+      title: 'The Boardroom',
+      emoji: '📊',
+      color: 'from-forest to-forest/80',
+      description: 'Check the leaderboard and see how you rank',
+      category: 'personal'
+    },
+    {
+      id: 'shop',
+      title: 'The Shop',
+      emoji: '🛍️',
+      color: 'from-purple-400 to-purple-500',
+      description: 'Spend your coins on cool desk items',
+      category: 'personal'
+    },
   ]
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Welcome to Forward Institute, {player.name}!</h1>
+    <div className="max-w-7xl mx-auto p-6 animate-fade-in">
+      {/* Welcome Banner with Level Progress */}
+      <div className="bg-gradient-to-r from-forest to-forest/80 text-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Welcome to Forward HQ, {player.name}! 🏢</h1>
+            <p className="text-day/90">Ready to earn coins and climb the ranks?</p>
+          </div>
+          <div className="text-right">
+            <p className="text-2xl font-bold">{level}</p>
+            <p className="text-sm text-day/70">Your current rank</p>
+          </div>
+        </div>
+        <div className="w-full bg-white/20 rounded-full h-2 mb-2">
+          <div
+            className="bg-sunshine h-2 rounded-full transition-all"
+            style={{ width: `${progressPercent}%` }}
+          ></div>
+        </div>
+        <p className="text-xs text-day/70">{player.total_coins_earned} / {nextLevelCoins} coins to next level</p>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {rooms.map((room) => (
-          <button
-            key={room.id}
-            onClick={() => !room.locked && onNavigate(room.id)}
-            disabled={room.locked}
-            className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
-              room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
-            } bg-gradient-to-br ${room.color}`}
-          >
-            <div className="text-5xl mb-3">{room.emoji}</div>
-            <div>{room.title}</div>
-            {room.locked && <div className="text-sm mt-2">🔒 Age 12+</div>}
-          </button>
-        ))}
+      {/* Room Cards Grouped by Category */}
+      <div>
+        <h2 className="text-xl font-bold text-night mb-4">Real Work Rooms</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {rooms.filter(r => r.category === 'work').map((room) => (
+            <button
+              key={room.id}
+              onClick={() => !room.locked && onNavigate(room.id)}
+              disabled={room.locked}
+              className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
+                room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
+              } bg-gradient-to-br ${room.color}`}
+            >
+              <div className="text-5xl mb-3">{room.emoji}</div>
+              <div className="text-left">
+                <h3 className="font-bold text-lg">{room.title}</h3>
+                <p className="text-sm text-white/80 mt-1">{room.description}</p>
+              </div>
+              {room.earnsCoins && <div className="text-xs mt-3 bg-white/20 px-2 py-1 rounded-full inline-block">💰 Earns coins</div>}
+              {room.locked && <div className="text-sm mt-3">🔒 Age 12+</div>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-night mb-4">Fun & Games</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {rooms.filter(r => r.category === 'fun').map((room) => (
+            <button
+              key={room.id}
+              onClick={() => !room.locked && onNavigate(room.id)}
+              disabled={room.locked}
+              className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
+                room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
+              } bg-gradient-to-br ${room.color}`}
+            >
+              <div className="text-5xl mb-3">{room.emoji}</div>
+              <div className="text-left">
+                <h3 className="font-bold text-lg">{room.title}</h3>
+                <p className="text-sm text-white/80 mt-1">{room.description}</p>
+              </div>
+              {room.locked && <div className="text-sm mt-3">🔒 Age 12+</div>}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-xl font-bold text-night mb-4">Personal</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rooms.filter(r => r.category === 'personal').map((room) => (
+            <button
+              key={room.id}
+              onClick={() => !room.locked && onNavigate(room.id)}
+              disabled={room.locked}
+              className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
+                room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
+              } bg-gradient-to-br ${room.color}`}
+            >
+              <div className="text-5xl mb-3">{room.emoji}</div>
+              <div className="text-left">
+                <h3 className="font-bold text-lg">{room.title}</h3>
+                <p className="text-sm text-white/80 mt-1">{room.description}</p>
+              </div>
+              {room.locked && <div className="text-sm mt-3">🔒 Age 12+</div>}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   )
@@ -324,7 +449,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
   const ownedItems = (player.desk_items || []).map((emoji) => ({ emoji, name: SHOP_ITEMS[emoji] || 'Item' }))
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -373,7 +498,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={saveCroppedImage}
-                      className="flex-1 bg-[#195e47] text-white py-2 rounded-lg hover:bg-[#124a38] transition"
+                      className="flex-1 bg-forest text-white py-2 rounded-lg hover:opacity-90 transition"
                     >
                       Save
                     </button>
@@ -382,7 +507,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
                         setCropMode(false)
                         setAvatarPreview('')
                       }}
-                      className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-[#fcf2e3]0 transition"
+                      className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-gray-300 transition"
                     >
                       Cancel
                     </button>
@@ -390,7 +515,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
                 </div>
               ) : (
                 <>
-                  <div className="w-48 h-48 rounded-full bg-gradient-to-br from-[#195e47] to-[#124a38] flex items-center justify-center text-white font-bold text-5xl overflow-hidden">
+                  <div className="w-48 h-48 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-5xl overflow-hidden">
                     {avatarPreview ? (
                       <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -400,13 +525,13 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
                   <div className="flex gap-2 mt-4">
                     <button
                       onClick={handleImageSearch}
-                      className="flex-1 px-4 py-2 bg-[#e8f5ef] text-[#124a38] rounded-lg hover:bg-[#dceae4] transition text-sm"
+                      className="flex-1 px-4 py-2 bg-day text-forest rounded-lg hover:bg-gray-200 transition text-sm"
                     >
                       🔍 Search
                     </button>
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="flex-1 px-4 py-2 bg-[#195e47] text-white rounded-lg hover:bg-[#124a38] transition text-sm"
+                      className="flex-1 px-4 py-2 bg-forest text-white rounded-lg hover:opacity-90 transition text-sm"
                     >
                       📤 Upload
                     </button>
@@ -428,17 +553,17 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           {/* Stats Section */}
           <div className="md:col-span-2 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-[#fcf2e3] p-4 rounded-lg">
+              <div className="bg-day p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Level</p>
-                <p className="text-2xl font-bold text-[#195e47]">{level}</p>
+                <p className="text-2xl font-bold text-forest">{level}</p>
               </div>
               <div className="bg-yellow-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Total Coins</p>
-                <p className="text-2xl font-bold text-yellow-600">{player.total_coins_earned}</p>
+                <p className="text-2xl font-bold text-sunshine">{player.total_coins_earned}</p>
               </div>
-              <div className="bg-[#fcf2e3] p-4 rounded-lg">
+              <div className="bg-day p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Coins Available</p>
-                <p className="text-2xl font-bold text-[#195e47]">{player.coins}</p>
+                <p className="text-2xl font-bold text-forest">{player.coins}</p>
               </div>
               <div className="bg-purple-50 p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Tasks Completed</p>
@@ -501,40 +626,8 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
   const [selectedRel, setSelectedRel] = useState('')
   const [stats, setStats] = useState({ completed: 0, streak: 0, coinsThisSession: 0 })
 
-  const CONTACT_TYPES = [
-    'Organisation',
-    'Human Resources',
-    'Speaker',
-    'Supplier',
-    'FI Friend',
-    'FI Staff Member',
-    'FI Facilitator',
-    'FI Faculty',
-    'FI Board Member',
-    'Fellow',
-    'Exchange Participant',
-  ]
-
-  const RELATIONSHIPS = [
-    'Personal Assistant',
-    'Line Manager',
-    'Senior Leader',
-    'Stakeholder',
-    'Senior HR',
-    'Key HR',
-    'Chief Executive Officer',
-    'Head of Talent',
-    'Head of People',
-    'Head of Leadership',
-    'Board Member',
-    'Founder',
-    'HR Contact',
-    'Dinner Host',
-    'Cross-Programme',
-    'Discovery Session',
-    'Events Supplier',
-    'Other',
-  ]
+  const CONTACT_TYPES = ['Person', 'Organisation', 'Government', 'Charity']
+  const RELATIONSHIPS = ['Executive', 'Manager', 'Employee', 'Founder', 'Investor', 'Partner', 'Other']
 
   useEffect(() => {
     loadContacts()
@@ -547,9 +640,11 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
         .select('*')
         .eq('status', 'pending')
         .limit(20)
-
       setContacts(data || [])
       setCurrentIndex(0)
+      setSuggestion(null)
+      setSelectedType('')
+      setSelectedRel('')
     } catch (e) {
       console.error('Failed to load contacts:', e)
     }
@@ -557,15 +652,8 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
 
   const currentContact = contacts[currentIndex]
 
-  // Auto-fetch AI suggestion when contact changes
-  useEffect(() => {
-    if (currentContact) {
-      getSuggestion(currentContact)
-    }
-  }, [currentIndex, contacts])
-
-  const getSuggestion = async (contact) => {
-    if (!contact) return
+  const getAISuggestion = async () => {
+    if (!currentContact) return
 
     setLoadingSuggestion(true)
     setSuggestion(null)
@@ -574,18 +662,26 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: contact.title,
-          orgName: contact.org_name,
-          sector: contact.org_sector,
-          industry: contact.org_industry,
-          companySize: contact.company_size,
+          title: currentContact.title,
+          orgName: currentContact.org_name,
+          sector: currentContact.org_sector,
+          industry: currentContact.org_industry,
+          companySize: currentContact.company_size,
         }),
       })
 
       const data = await res.json()
-      setSuggestion(data)
-      setSelectedType(data.contactType || 'Organisation')
-      setSelectedRel(data.relationship || 'Other')
+
+      // Check for error or missing data - use fallback
+      if (data.error || !data.contactType) {
+        setSuggestion({ contactType: 'Organisation', relationship: 'Other', reasoning: 'Could not get AI suggestion - please classify manually.' })
+        setSelectedType('Organisation')
+        setSelectedRel('Other')
+      } else {
+        setSuggestion(data)
+        setSelectedType(data.contactType || 'Organisation')
+        setSelectedRel(data.relationship || 'Other')
+      }
     } catch (e) {
       console.error('Failed to get suggestion:', e)
       setSuggestion({ contactType: 'Organisation', relationship: 'Other', reasoning: 'Could not get AI suggestion - please classify manually.' })
@@ -647,7 +743,7 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
 
   if (!currentContact && contacts.length === 0) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6 animate-fade-in">
         <button
           onClick={() => onNavigate('hub')}
           className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -662,7 +758,7 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -670,124 +766,114 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
         ← Back to Hub
       </button>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-[#e8f5ef] p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Completed</p>
-          <p className="text-2xl font-bold text-[#195e47]">{stats.completed}</p>
-        </div>
-        <div className="bg-orange-100 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Streak</p>
-          <p className="text-2xl font-bold text-orange-600">{stats.streak}</p>
-        </div>
-        <div className="bg-[#e8f5ef] p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Session Coins</p>
-          <p className="text-2xl font-bold text-[#195e47]">{stats.coinsThisSession}</p>
-        </div>
-        <div className="bg-purple-100 p-4 rounded-lg">
-          <p className="text-sm text-gray-600">Bonus at 5</p>
-          <p className="text-2xl font-bold text-purple-600">+25</p>
-        </div>
-      </div>
-
-      {currentContact && (
-        <div className="bg-white rounded-xl shadow-lg p-8 space-y-6">
-          <div className="bg-[#fcf2e3] p-6 rounded-lg">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Contact #{currentIndex + 1}</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-600">Job Title</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.title}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Organisation</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.org_name || 'Unknown'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Sector</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.org_sector || 'Unknown'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">Industry</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.org_industry || 'Unknown'}</p>
-              </div>
-            </div>
+      <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Contact Classifier</h1>
+          <div className="flex gap-4 text-sm">
+            <span className="bg-day px-3 py-1 rounded-full font-semibold text-forest">
+              {currentIndex + 1}/{contacts.length}
+            </span>
+            <span className="bg-sunshine/20 px-3 py-1 rounded-full font-semibold text-sunshine">
+              {stats.completed} completed
+            </span>
+            <span className="bg-day px-3 py-1 rounded-full font-semibold text-forest">
+              Streak: {stats.streak}
+            </span>
           </div>
+        </div>
 
-          {loadingSuggestion && (
-            <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-lg text-center">
-              <p className="text-gray-700 font-medium">Asking AI for a suggestion...</p>
-              <div className="mt-2 animate-pulse text-2xl">🤔</div>
-            </div>
-          )}
-
-          {suggestion && !loadingSuggestion && (
-            <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-lg">
-              <h3 className="font-bold text-gray-900 mb-2">AI thinks...</h3>
-              <p className="text-gray-700 mb-4">{suggestion.reasoning}</p>
+        {currentContact && (
+          <div className="space-y-6">
+            <div className="bg-day p-6 rounded-lg border-l-4 border-earth">
+              <h2 className="text-2xl font-bold text-night mb-4">{currentContact.title}</h2>
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="bg-white p-3 rounded">
-                  <p className="text-gray-600">Type</p>
-                  <p className="font-semibold">{suggestion.contactType}</p>
+                <div>
+                  <p className="text-gray-600">Organization</p>
+                  <p className="font-semibold text-gray-900">{currentContact.org_name || '-'}</p>
                 </div>
-                <div className="bg-white p-3 rounded">
-                  <p className="text-gray-600">Relationship</p>
-                  <p className="font-semibold">{suggestion.relationship}</p>
+                <div>
+                  <p className="text-gray-600">Sector</p>
+                  <p className="font-semibold text-gray-900">{currentContact.org_sector || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Industry</p>
+                  <p className="font-semibold text-gray-900">{currentContact.org_industry || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-gray-600">Company Size</p>
+                  <p className="font-semibold text-gray-900">{currentContact.company_size || '-'}</p>
                 </div>
               </div>
-              <p className="text-xs text-gray-500 mt-3">You can change the dropdowns below if you disagree!</p>
             </div>
-          )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Contact Type</label>
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#195e47]"
-              >
-                <option value="">Select...</option>
-                {CONTACT_TYPES.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
+            {/* AI Suggestion or Manual Classification */}
+            {suggestion && (
+              <div className="bg-sky/20 border border-sky rounded-lg p-4">
+                <p className="text-sm font-semibold text-sky mb-2">AI Suggestion:</p>
+                <p className="text-gray-700">{suggestion.reasoning}</p>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Contact Type</label>
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="w-full p-3 border border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
+                >
+                  <option value="">Select type...</option>
+                  {CONTACT_TYPES.map((type) => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-900 mb-2">Relationship</label>
+                <select
+                  value={selectedRel}
+                  onChange={(e) => setSelectedRel(e.target.value)}
+                  className="w-full p-3 border border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
+                >
+                  <option value="">Select relationship...</option>
+                  {RELATIONSHIPS.map((rel) => (
+                    <option key={rel} value={rel}>
+                      {rel}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">Relationship</label>
-              <select
-                value={selectedRel}
-                onChange={(e) => setSelectedRel(e.target.value)}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#195e47]"
+
+            <div className="flex gap-3">
+              {!suggestion && (
+                <button
+                  onClick={getAISuggestion}
+                  disabled={loadingSuggestion}
+                  className="flex-1 bg-sky text-white py-3 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
+                >
+                  {loadingSuggestion ? 'Thinking... 🤔' : 'Get AI Suggestion 💡'}
+                </button>
+              )}
+              <button
+                onClick={submitClassification}
+                disabled={!selectedType || !selectedRel}
+                className="flex-1 bg-forest text-white py-3 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
               >
-                <option value="">Select...</option>
-                {RELATIONSHIPS.map((rel) => (
-                  <option key={rel} value={rel}>
-                    {rel}
-                  </option>
-                ))}
-              </select>
+                Submit Classification ✓
+              </button>
+              <button
+                onClick={skipContact}
+                className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-lg font-bold hover:bg-gray-400 transition"
+              >
+                Skip
+              </button>
             </div>
           </div>
-
-          <div className="flex gap-4">
-            <button
-              onClick={submitClassification}
-              disabled={!selectedType || !selectedRel}
-              className="flex-1 bg-[#195e47] text-white py-3 rounded-lg font-bold hover:bg-[#124a38] disabled:opacity-50 transition"
-            >
-              ✓ Submit
-            </button>
-            <button
-              onClick={skipContact}
-              className="flex-1 bg-gray-400 text-white py-3 rounded-lg font-bold hover:bg-[#fcf2e3]0 transition"
-            >
-              → Skip
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
@@ -812,9 +898,8 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
       const { data } = await supabase
         .from('organisations')
         .select('*')
-        .is('logo_url', null)
-        .limit(50)
-
+        .eq('logo_found', false)
+        .limit(20)
       setOrganisations(data || [])
       setCurrentIndex(0)
     } catch (e) {
@@ -837,10 +922,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
   }
 
   const handleImageSearch = () => {
-    window.open(
-      `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(currentOrg.name + ' logo')}`,
-      '_blank'
-    )
+    window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(currentOrg.name + ' logo')}`, '_blank')
   }
 
   const saveCroppedLogo = () => {
@@ -866,37 +948,14 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
     setCropMode(false)
   }
 
-  const skipOrg = async () => {
-    try {
-      await supabase
-        .from('organisations')
-        .update({ logo_url: 'skipped' })
-        .eq('id', currentOrg.id)
-
-      setLogoPreview('')
-      setCropMode(false)
-
-      if (currentIndex < organisations.length - 1) {
-        setCurrentIndex(currentIndex + 1)
-      } else {
-        loadOrganisations()
-      }
-    } catch (e) {
-      console.error('Failed to skip org:', e)
-    }
-  }
-
   const uploadLogo = async (dataUrl) => {
-    if (!currentOrg) return
-
     try {
       await supabase
         .from('organisations')
-        .update({ logo_url: dataUrl })
+        .update({ logo_url: dataUrl, logo_found: true })
         .eq('id', currentOrg.id)
 
-      setLogoPreview('')
-      onUpdateCoins(15)
+      onUpdateCoins(40)
 
       if (currentIndex < organisations.length - 1) {
         setCurrentIndex(currentIndex + 1)
@@ -908,9 +967,17 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
     }
   }
 
+  const skipOrg = () => {
+    if (currentIndex < organisations.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+    } else {
+      loadOrganisations()
+    }
+  }
+
   if (!currentOrg) {
     return (
-      <div className="max-w-4xl mx-auto p-6">
+      <div className="max-w-4xl mx-auto p-6 animate-fade-in">
         <button
           onClick={() => onNavigate('hub')}
           className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -927,7 +994,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
   const progress = organisations.length > 0 ? Math.round(((currentIndex + 1) / organisations.length) * 100) : 0
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -938,11 +1005,11 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
       <div className="mb-6">
         <div className="flex justify-between items-center mb-2">
           <h2 className="font-bold text-gray-900">Logo Hunt Progress</h2>
-          <span className="text-lg font-bold text-orange-600">{progress}%</span>
+          <span className="text-lg font-bold text-earth">{progress}%</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-4">
           <div
-            className="bg-orange-500 h-4 rounded-full transition-all"
+            className="bg-earth h-4 rounded-full transition-all"
             style={{ width: `${progress}%` }}
           ></div>
         </div>
@@ -955,22 +1022,22 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Org Details</h3>
             <div className="space-y-4">
-              <div className="bg-[#fcf2e3] p-4 rounded-lg">
+              <div className="bg-day p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Name</p>
                 <p className="text-lg font-semibold text-gray-900">{currentOrg.name}</p>
               </div>
-              <div className="bg-[#fcf2e3] p-4 rounded-lg">
+              <div className="bg-day p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Sector</p>
                 <p className="text-lg font-semibold text-gray-900">{currentOrg.sector}</p>
               </div>
-              <div className="bg-[#fcf2e3] p-4 rounded-lg">
+              <div className="bg-day p-4 rounded-lg">
                 <p className="text-sm text-gray-600">Industry</p>
                 <p className="text-lg font-semibold text-gray-900">{currentOrg.industry}</p>
               </div>
               {currentOrg.website && (
-                <div className="bg-[#fcf2e3] p-4 rounded-lg">
+                <div className="bg-day p-4 rounded-lg">
                   <p className="text-sm text-gray-600">Website</p>
-                  <p className="text-lg font-semibold text-[#195e47] truncate">{currentOrg.website}</p>
+                  <p className="text-lg font-semibold text-forest truncate">{currentOrg.website}</p>
                 </div>
               )}
             </div>
@@ -1009,7 +1076,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
                 <div className="flex gap-2 mt-4">
                   <button
                     onClick={saveCroppedLogo}
-                    className="flex-1 bg-[#195e47] text-white py-2 rounded-lg hover:bg-[#124a38] transition"
+                    className="flex-1 bg-forest text-white py-2 rounded-lg hover:opacity-90 transition"
                   >
                     Save
                   </button>
@@ -1018,7 +1085,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
                       setCropMode(false)
                       setLogoPreview('')
                     }}
-                    className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-[#fcf2e3]0 transition"
+                    className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-gray-300 transition"
                   >
                     Cancel
                   </button>
@@ -1032,13 +1099,13 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
                 <div className="flex gap-2">
                   <button
                     onClick={handleImageSearch}
-                    className="flex-1 px-4 py-3 bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition font-semibold"
+                    className="flex-1 px-4 py-3 bg-sky/20 text-sky rounded-lg hover:bg-sky/30 transition font-semibold"
                   >
                     🔍 Search
                   </button>
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex-1 px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-semibold"
+                    className="flex-1 px-4 py-3 bg-sky text-white rounded-lg hover:opacity-90 transition font-semibold"
                   >
                     📤 Upload
                   </button>
@@ -1047,7 +1114,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
                   onClick={skipOrg}
                   className="w-full mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition font-medium text-sm"
                 >
-                  Skip this one (defunct / can't find)
+                  Skip
                 </button>
               </>
             )}
@@ -1072,7 +1139,7 @@ function ArcadeScreen({ player, onNavigate, onUpdateCoins }) {
   const [game, setGame] = useState(null)
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -1081,38 +1148,35 @@ function ArcadeScreen({ player, onNavigate, onUpdateCoins }) {
       </button>
 
       {!game ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <button
-            onClick={() => setGame('speedtyper')}
-            className="bg-gradient-to-br from-pink-400 to-pink-600 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
-          >
-            <div className="text-5xl mb-4">⌨️</div>
-            <h3 className="text-2xl font-bold mb-2">Speed Typer</h3>
-            <p className="text-pink-100">Type sentences as fast as you can!</p>
-          </button>
-          <button
-            onClick={() => setGame('memory')}
-            className="bg-gradient-to-br from-[#195e47] to-[#124a38] text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
-          >
-            <div className="text-5xl mb-4">🧠</div>
-            <h3 className="text-2xl font-bold mb-2">Memory Match</h3>
-            <p className="text-[#e8f5ef]">Match pairs of office emojis!</p>
-          </button>
-          <button
-            onClick={() => setGame('scramble')}
-            className="bg-gradient-to-br from-[#195e47] to-[#124a38] text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
-          >
-            <div className="text-5xl mb-4">🔤</div>
-            <h3 className="text-2xl font-bold mb-2">Word Scramble</h3>
-            <p className="text-[#195e47]">Unscramble business words!</p>
-          </button>
+        <div className="space-y-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">🎮 The Arcade</h1>
+            <p className="text-gray-600">Play games and earn coins!</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button
+              onClick={() => setGame('speedtyper')}
+              className="bg-gradient-to-br from-sky to-sky/80 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <div className="text-5xl mb-4">⌨️</div>
+              <h3 className="text-2xl font-bold mb-2">Speed Typer</h3>
+              <p className="text-sky/90">Type sentences as fast as you can!</p>
+            </button>
+            <button
+              onClick={() => setGame('memory')}
+              className="bg-gradient-to-br from-pink-400 to-pink-500 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <div className="text-5xl mb-4">🧠</div>
+              <h3 className="text-2xl font-bold mb-2">Memory Match</h3>
+              <p className="text-pink-100">Test your memory with emoji pairs!</p>
+            </button>
+          </div>
         </div>
       ) : game === 'speedtyper' ? (
         <SpeedTyperGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
       ) : game === 'memory' ? (
         <MemoryGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
-      ) : game === 'scramble' ? (
-        <WordScrambleGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
       ) : null}
     </div>
   )
@@ -1143,6 +1207,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
   const [perfectRound, setPerfectRound] = useState(false)
   const [coinsPaid, setCoinsPaid] = useState(false)
   const inputRef = useRef(null)
+  const fetchedRef = useRef(false)
 
   const fetchSentence = async (diff) => {
     setLoading(true)
@@ -1170,10 +1235,15 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
     setTimeout(() => inputRef.current?.focus(), 100)
   }
 
+  // Use ref guard to prevent double-fetch in strict mode
   useEffect(() => {
-    fetchSentence(1)
+    if (!fetchedRef.current) {
+      fetchedRef.current = true
+      fetchSentence(1)
+    }
   }, [])
 
+  // Pause timer while loading new sentence
   useEffect(() => {
     if (gameOver || loading) return
     const timer = setInterval(() => {
@@ -1402,68 +1472,39 @@ function MemoryGame({ onBack, onUpdateCoins }) {
     return pairs
   })
 
-  const [revealed, setRevealed] = useState(new Array(16).fill(false))
-  const [matched, setMatched] = useState(new Array(16).fill(false))
-  const [firstCard, setFirstCard] = useState(null)
-  const [secondCard, setSecondCard] = useState(null)
-  const [locked, setLocked] = useState(false)
-  const [time, setTime] = useState(0)
+  const [flipped, setFlipped] = useState(new Set())
+  const [matched, setMatched] = useState(new Set())
   const [moves, setMoves] = useState(0)
-  const [gameWon, setGameWon] = useState(false)
 
-  useEffect(() => {
-    if (gameWon) return
-    const timer = setInterval(() => setTime((t) => t + 1), 1000)
-    return () => clearInterval(timer)
-  }, [gameWon])
+  const handleClick = (i) => {
+    if (matched.has(i) || flipped.has(i)) return
 
-  useEffect(() => {
-    if (matched.every(Boolean)) {
-      setGameWon(true)
-      const coins = Math.max(10, 30 - Math.floor(time / 5))
-      onUpdateCoins(coins)
-    }
-  }, [matched])
+    const newFlipped = new Set(flipped)
+    newFlipped.add(i)
+    setFlipped(newFlipped)
 
-  const handleCardClick = (idx) => {
-    if (locked || revealed[idx] || matched[idx]) return
+    if (newFlipped.size === 2) {
+      const [first, second] = Array.from(newFlipped)
+      setMoves(moves + 1)
 
-    if (firstCard === null) {
-      const newRevealed = [...revealed]
-      newRevealed[idx] = true
-      setRevealed(newRevealed)
-      setFirstCard(idx)
-    } else if (secondCard === null && idx !== firstCard) {
-      setLocked(true)
-      setMoves((m) => m + 1)
-      const newRevealed = [...revealed]
-      newRevealed[idx] = true
-      setRevealed(newRevealed)
-      setSecondCard(idx)
+      if (deck[first] === deck[second]) {
+        const newMatched = new Set(matched)
+        newMatched.add(first)
+        newMatched.add(second)
+        setMatched(newMatched)
+        setFlipped(new Set())
 
-      if (deck[firstCard] === deck[idx]) {
-        const newMatched = [...matched]
-        newMatched[firstCard] = true
-        newMatched[idx] = true
-        setTimeout(() => {
-          setMatched(newMatched)
-          setFirstCard(null)
-          setSecondCard(null)
-          setLocked(false)
-        }, 300)
+        if (newMatched.size === deck.length) {
+          // Game won, pay coins
+          onUpdateCoins(Math.max(10, 50 - moves))
+        }
       } else {
-        setTimeout(() => {
-          const newRevealed2 = [...newRevealed]
-          newRevealed2[firstCard] = false
-          newRevealed2[idx] = false
-          setRevealed(newRevealed2)
-          setFirstCard(null)
-          setSecondCard(null)
-          setLocked(false)
-        }, 800)
+        setTimeout(() => setFlipped(new Set()), 600)
       }
     }
   }
+
+  const gameWon = matched.size === deck.length
 
   if (gameWon) {
     return (
@@ -1476,18 +1517,9 @@ function MemoryGame({ onBack, onUpdateCoins }) {
         </button>
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="text-6xl mb-4">🧠</div>
-          <h2 className="text-3xl font-bold text-night mb-2">You Won!</h2>
-          <p className="text-sm text-gray-500 mb-4">Theme: {theme.name}</p>
-          <div className="grid grid-cols-2 gap-4 mb-6 max-w-xs mx-auto">
-            <div className="bg-day rounded-lg p-3">
-              <p className="text-2xl font-bold text-forest">{time}s</p>
-              <p className="text-xs text-gray-600">Time</p>
-            </div>
-            <div className="bg-day rounded-lg p-3">
-              <p className="text-2xl font-bold text-forest">{moves}</p>
-              <p className="text-xs text-gray-600">Moves</p>
-            </div>
-          </div>
+          <h2 className="text-3xl font-bold text-night mb-4">Perfect!</h2>
+          <p className="text-2xl font-bold text-forest mb-2">{moves} moves</p>
+          <p className="text-lg text-gray-600 mb-6">{Math.max(10, 50 - moves)} coins earned!</p>
           <button
             onClick={onBack}
             className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition"
@@ -1508,34 +1540,71 @@ function MemoryGame({ onBack, onUpdateCoins }) {
         ← Back
       </button>
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold text-night">Memory Match</h1>
-          <span className="text-sm bg-day px-3 py-1 rounded-full">{theme.name}</span>
-        </div>
-        <div className="flex gap-4 text-sm text-gray-600 mb-6">
-          <span>Time: {time}s</span>
-          <span>Moves: {moves}</span>
-          <span>Pairs: {matched.filter(Boolean).length / 2}/8</span>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-night">Memory Match: {theme.name}</h1>
+          <span className="bg-day px-3 py-1 rounded-full font-semibold text-forest">Moves: {moves}</span>
         </div>
 
-        <div className="grid grid-cols-4 gap-3">
-          {deck.map((emoji, idx) => (
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          {deck.map((emoji, i) => (
             <button
-              key={idx}
-              onClick={() => handleCardClick(idx)}
-              className={`aspect-square text-4xl rounded-lg font-bold transition-all duration-300 ${
-                matched[idx]
-                  ? 'bg-green-100 text-gray-900 scale-95'
-                  : revealed[idx]
-                    ? 'bg-day text-gray-900 scale-105'
-                    : 'bg-gradient-to-br from-forest to-[#124a38] text-day hover:scale-110 cursor-pointer'
+              key={i}
+              onClick={() => handleClick(i)}
+              className={`aspect-square text-4xl rounded-lg transition transform hover:scale-110 ${
+                matched.has(i)
+                  ? 'bg-sky/30 cursor-default'
+                  : flipped.has(i)
+                    ? 'bg-sky text-white'
+                    : 'bg-day hover:bg-gray-200 cursor-pointer'
               }`}
             >
-              {revealed[idx] || matched[idx] ? emoji : '?'}
+              {flipped.has(i) || matched.has(i) ? emoji : '?'}
             </button>
           ))}
         </div>
+
+        <p className="text-center text-sm text-gray-600">
+          {matched.size / 2} / {deck.length / 2} pairs found
+        </p>
       </div>
+    </div>
+  )
+}
+
+// BREAK ROOM SCREEN
+function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
+  const [game, setGame] = useState(null)
+
+  return (
+    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+      <button
+        onClick={() => onNavigate('hub')}
+        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+      >
+        ← Back to Hub
+      </button>
+
+      {!game ? (
+        <div className="space-y-8">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">☕ The Break Room</h1>
+            <p className="text-gray-600">Relax with word games and puzzles!</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <button
+              onClick={() => setGame('scramble')}
+              className="bg-gradient-to-br from-purple-400 to-purple-500 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <div className="text-5xl mb-4">🔤</div>
+              <h3 className="text-2xl font-bold mb-2">Word Scramble</h3>
+              <p className="text-purple-100">Unscramble business words!</p>
+            </button>
+          </div>
+        </div>
+      ) : game === 'scramble' ? (
+        <WordScrambleGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
+      ) : null}
     </div>
   )
 }
@@ -1544,11 +1613,23 @@ function MemoryGame({ onBack, onUpdateCoins }) {
 function WordScrambleGame({ onBack, onUpdateCoins }) {
   const words = ['MANAGER', 'OFFICE', 'MEETING', 'PROJECT', 'BUSINESS', 'EMPLOYEE', 'COMPANY']
   const [round, setRound] = useState(1)
-  const [currentWord] = useState(
-    words[round - 1].split('').sort(() => Math.random() - 0.5).join('')
-  )
+  const [currentWord, setCurrentWord] = useState('')
   const [input, setInput] = useState('')
   const [correct, setCorrect] = useState(0)
+
+  // Generate scrambled word that doesn't match the original
+  const generateScrambledWord = (word) => {
+    let scrambled
+    do {
+      scrambled = word.split('').sort(() => Math.random() - 0.5).join('')
+    } while (scrambled === word)
+    return scrambled
+  }
+
+  // Update current word whenever round changes
+  useEffect(() => {
+    setCurrentWord(generateScrambledWord(words[round - 1]))
+  }, [round])
 
   const handleSubmit = () => {
     if (input.toUpperCase() === words[round - 1]) {
@@ -1574,12 +1655,12 @@ function WordScrambleGame({ onBack, onUpdateCoins }) {
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="text-6xl mb-4">🔤</div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete!</h2>
-          <p className="text-2xl font-bold text-[#195e47] mb-2">{correct}/7 Correct</p>
+          <p className="text-2xl font-bold text-forest mb-2">{correct}/7 Correct</p>
           <button
             onClick={onBack}
-            className="bg-[#195e47] text-white px-8 py-3 rounded-lg font-bold hover:bg-[#124a38] transition"
+            className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition"
           >
-            Back to Games
+            Back to Break Room
           </button>
         </div>
       </div>
@@ -1600,8 +1681,8 @@ function WordScrambleGame({ onBack, onUpdateCoins }) {
           Round {round}/7 - Correct: {correct}
         </p>
 
-        <div className="bg-[#e8f5ef] p-6 rounded-lg mb-6 text-center">
-          <p className="text-4xl font-bold text-[#195e47] tracking-widest">{currentWord}</p>
+        <div className="bg-gradient-to-br from-forest/20 to-forest/10 p-6 rounded-lg mb-6 text-center">
+          <p className="text-4xl font-bold text-emerald-100 tracking-widest">{currentWord}</p>
         </div>
 
         <input
@@ -1610,343 +1691,16 @@ function WordScrambleGame({ onBack, onUpdateCoins }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           autoFocus
-          className="w-full p-4 border-2 border-[#195e47] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#195e47] mb-4 text-lg"
+          className="w-full p-4 border-2 border-forest rounded-lg focus:outline-none focus:ring-2 focus:ring-forest mb-4 text-lg"
           placeholder="Type the answer..."
         />
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-[#195e47] text-white py-3 rounded-lg font-bold hover:bg-[#124a38] transition"
+          className="w-full bg-forest text-white py-3 rounded-lg font-bold hover:opacity-90 transition"
         >
           Submit
         </button>
-      </div>
-    </div>
-  )
-}
-
-// BREAK ROOM SCREEN
-function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
-  const [game, setGame] = useState(null)
-
-  return (
-    <div className="max-w-4xl mx-auto p-6">
-      <button
-        onClick={() => onNavigate('hub')}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-      >
-        ← Back to Hub
-      </button>
-
-      {!game ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <button
-            onClick={() => setGame('trivia')}
-            className="bg-gradient-to-br from-[#195e47] to-[#124a38] text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
-          >
-            <div className="text-5xl mb-4">❓</div>
-            <h3 className="text-2xl font-bold mb-2">Office Trivia</h3>
-            <p className="text-[#e8f5ef]">Test your business knowledge!</p>
-          </button>
-          <button
-            onClick={() => setGame('oddone')}
-            className="bg-gradient-to-br from-orange-400 to-orange-600 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
-          >
-            <div className="text-5xl mb-4">👀</div>
-            <h3 className="text-2xl font-bold mb-2">Spot the Odd One</h3>
-            <p className="text-orange-100">Find what doesn't belong!</p>
-          </button>
-        </div>
-      ) : game === 'trivia' ? (
-        <TriviaGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
-      ) : game === 'oddone' ? (
-        <OddOneGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
-      ) : null}
-    </div>
-  )
-}
-
-// Trivia Game
-function TriviaGame({ onBack, onUpdateCoins }) {
-  const [questions, setQuestions] = useState([])
-  const [question, setQuestion] = useState(0)
-  const [score, setScore] = useState(0)
-  const [finished, setFinished] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [answered, setAnswered] = useState(null)
-  const [showFact, setShowFact] = useState(false)
-
-  useEffect(() => {
-    fetchQuestions()
-  }, [])
-
-  const fetchQuestions = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/trivia', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: 5 }),
-      })
-      const data = await res.json()
-      if (data.questions?.length) {
-        setQuestions(data.questions)
-      } else {
-        throw new Error('No questions')
-      }
-    } catch {
-      setQuestions([
-        { q: 'In what year was the NHS founded?', options: ['1939', '1948', '1955', '1962'], correct: 1, funFact: 'The NHS was founded by Aneurin Bevan on 5 July 1948.' },
-        { q: 'What is the tallest building in London?', options: ['The Gherkin', 'Canary Wharf', 'The Shard', 'BT Tower'], correct: 2, funFact: 'The Shard stands at 310 metres tall.' },
-        { q: 'Which planet is closest to the Sun?', options: ['Venus', 'Mercury', 'Mars', 'Earth'], correct: 1, funFact: 'Mercury orbits the Sun in just 88 Earth days.' },
-        { q: 'What does HTML stand for?', options: ['Hyper Text Markup Language', 'High Tech Modern Language', 'Home Tool Markup Language', 'Hyper Transfer Mail Language'], correct: 0, funFact: 'HTML was created by Tim Berners-Lee in 1991.' },
-        { q: 'Which UK city has the most canals?', options: ['London', 'Manchester', 'Birmingham', 'Leeds'], correct: 2, funFact: 'Birmingham has more canals than Venice!' },
-      ])
-    }
-    setLoading(false)
-  }
-
-  const handleAnswer = (idx) => {
-    if (answered !== null) return
-    setAnswered(idx)
-    if (idx === questions[question].correct) {
-      setScore(score + 1)
-      onUpdateCoins(5)
-    }
-    setShowFact(true)
-
-    setTimeout(() => {
-      setAnswered(null)
-      setShowFact(false)
-      if (question < questions.length - 1) {
-        setQuestion(question + 1)
-      } else {
-        setFinished(true)
-      }
-    }, 2500)
-  }
-
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="animate-pulse text-2xl mb-4">🧠</div>
-          <p className="text-gray-600">AI is writing quiz questions...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (finished) {
-    const totalCoins = score * 5
-    return (
-      <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">{score >= 4 ? '🏆' : score >= 2 ? '👏' : '🤔'}</div>
-          <h2 className="text-3xl font-bold text-night mb-2">Quiz Complete!</h2>
-          <p className="text-4xl font-bold text-forest mb-1">{score}/{questions.length}</p>
-          <p className="text-gray-600 mb-2">correct answers</p>
-          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
-          <button onClick={onBack} className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition">
-            Back to Break Room
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const q = questions[question]
-  if (!q) return null
-
-  return (
-    <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-night">Trivia</h1>
-          <div className="flex gap-3 text-sm">
-            <span className="bg-day px-3 py-1 rounded-full">Q{question + 1}/{questions.length}</span>
-            <span className="bg-forest text-white px-3 py-1 rounded-full">{score} correct</span>
-          </div>
-        </div>
-
-        <h2 className="text-xl font-bold text-night mb-6">{q.q}</h2>
-
-        <div className="space-y-3">
-          {q.options.map((option, idx) => {
-            let style = 'bg-day text-night hover:bg-gray-200'
-            if (answered !== null) {
-              if (idx === q.correct) {
-                style = 'bg-green-100 text-green-800 border-2 border-green-400 font-bold'
-              } else if (idx === answered && idx !== q.correct) {
-                style = 'bg-red-100 text-red-800 border-2 border-red-300'
-              } else {
-                style = 'bg-gray-100 text-gray-400'
-              }
-            }
-            return (
-              <button
-                key={idx}
-                onClick={() => handleAnswer(idx)}
-                disabled={answered !== null}
-                className={`w-full p-4 rounded-lg transition font-semibold text-lg text-left ${style}`}
-              >
-                {option}
-              </button>
-            )
-          })}
-        </div>
-
-        {showFact && q.funFact && (
-          <div className="mt-4 bg-sky/20 border border-sky rounded-lg p-4 text-sm text-night">
-            <strong>Fun fact:</strong> {q.funFact}
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// Odd One Out Game
-function OddOneGame({ onBack, onUpdateCoins }) {
-  const [sets, setSets] = useState([])
-  const [round, setRound] = useState(0)
-  const [score, setScore] = useState(0)
-  const [finished, setFinished] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const [answered, setAnswered] = useState(null)
-  const [showHint, setShowHint] = useState(false)
-
-  useEffect(() => {
-    fetchSets()
-  }, [])
-
-  const fetchSets = async () => {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/odd-one-out', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count: 5 }),
-      })
-      const data = await res.json()
-      if (data.sets?.length) {
-        setSets(data.sets)
-      } else {
-        throw new Error('No sets')
-      }
-    } catch {
-      setSets([
-        { items: ['Salmon', 'Trout', 'Tuna', 'Penguin'], odd: 'Penguin', hint: 'Three are fish, one is a bird' },
-        { items: ['Mars', 'Jupiter', 'Moon', 'Saturn'], odd: 'Moon', hint: 'Three are planets, one orbits a planet' },
-        { items: ['Python', 'Cobra', 'Java', 'Ruby'], odd: 'Cobra', hint: 'Three are programming languages, one is just a snake' },
-        { items: ['Violin', 'Trumpet', 'Cello', 'Viola'], odd: 'Trumpet', hint: 'Three are string instruments, one is brass' },
-        { items: ['Thames', 'Ben Nevis', 'Severn', 'Mersey'], odd: 'Ben Nevis', hint: 'Three are rivers, one is a mountain' },
-      ])
-    }
-    setLoading(false)
-  }
-
-  const handleChoice = (item) => {
-    if (answered !== null) return
-    setAnswered(item)
-    if (item === sets[round].odd) {
-      setScore(score + 1)
-      onUpdateCoins(5)
-    }
-    setShowHint(true)
-
-    setTimeout(() => {
-      setAnswered(null)
-      setShowHint(false)
-      if (round < sets.length - 1) {
-        setRound(round + 1)
-      } else {
-        setFinished(true)
-      }
-    }, 2500)
-  }
-
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="animate-pulse text-2xl mb-4">👀</div>
-          <p className="text-gray-600">AI is creating puzzles...</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (finished) {
-    const totalCoins = score * 5
-    return (
-      <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">{score >= 4 ? '🧠' : score >= 2 ? '👍' : '😅'}</div>
-          <h2 className="text-3xl font-bold text-night mb-2">Complete!</h2>
-          <p className="text-4xl font-bold text-earth mb-1">{score}/{sets.length}</p>
-          <p className="text-gray-600 mb-2">correct answers</p>
-          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
-          <button onClick={onBack} className="bg-earth text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition">
-            Back to Break Room
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const currentSet = sets[round]
-  if (!currentSet) return null
-
-  return (
-    <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-night">Odd One Out</h1>
-          <div className="flex gap-3 text-sm">
-            <span className="bg-day px-3 py-1 rounded-full">Round {round + 1}/{sets.length}</span>
-            <span className="bg-earth text-white px-3 py-1 rounded-full">{score} correct</span>
-          </div>
-        </div>
-
-        <h2 className="text-lg font-bold text-night mb-6">Which one doesn't belong with the others?</h2>
-
-        <div className="grid grid-cols-2 gap-4">
-          {currentSet.items.map((item, idx) => {
-            let style = 'bg-day text-night hover:bg-earth/10 hover:border-earth border-2 border-transparent'
-            if (answered !== null) {
-              if (item === currentSet.odd) {
-                style = 'bg-green-100 text-green-800 border-2 border-green-400 font-bold'
-              } else if (item === answered && item !== currentSet.odd) {
-                style = 'bg-red-100 text-red-800 border-2 border-red-300'
-              } else {
-                style = 'bg-gray-100 text-gray-400 border-2 border-transparent'
-              }
-            }
-            return (
-              <button
-                key={idx}
-                onClick={() => handleChoice(item)}
-                disabled={answered !== null}
-                className={`p-6 rounded-lg transition font-semibold text-xl text-center ${style}`}
-              >
-                {item}
-              </button>
-            )
-          })}
-        </div>
-
-        {showHint && currentSet.hint && (
-          <div className="mt-4 bg-earth/10 border border-earth/30 rounded-lg p-4 text-sm text-night">
-            <strong>Why?</strong> {currentSet.hint}
-          </div>
-        )}
       </div>
     </div>
   )
@@ -1965,7 +1719,7 @@ function BoardroomScreen({ player, onNavigate }) {
       const { data } = await supabase
         .from('players')
         .select('*')
-        .order('coins', { ascending: false })
+        .order('total_coins_earned', { ascending: false })
         .limit(50)
 
       setPlayers(data || [])
@@ -1975,7 +1729,7 @@ function BoardroomScreen({ player, onNavigate }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -1984,13 +1738,13 @@ function BoardroomScreen({ player, onNavigate }) {
       </button>
 
       <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="bg-gradient-to-r from-[#195e47] to-[#124a38] p-6">
+        <div className="bg-gradient-to-r from-forest to-forest/80 p-6">
           <h1 className="text-3xl font-bold text-white">🏆 Leaderboard</h1>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-[#fcf2e3] border-b">
+            <thead className="bg-day border-b">
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rank</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Player</th>
@@ -2007,7 +1761,7 @@ function BoardroomScreen({ player, onNavigate }) {
                   <tr
                     key={p.id}
                     className={`border-b transition ${
-                      isCurrentPlayer ? 'bg-yellow-50 font-bold' : 'hover:bg-[#fcf2e3]'
+                      isCurrentPlayer ? 'bg-yellow-50 font-bold' : 'hover:bg-day'
                     }`}
                   >
                     <td className="px-6 py-4 text-sm text-gray-900">
@@ -2015,7 +1769,7 @@ function BoardroomScreen({ player, onNavigate }) {
                     </td>
                     <td className="px-6 py-4 text-sm">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#195e47] to-[#124a38] flex items-center justify-center text-white font-bold text-xs">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-xs">
                           {p.avatar_url ? (
                             <img src={p.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
                           ) : (
@@ -2027,7 +1781,7 @@ function BoardroomScreen({ player, onNavigate }) {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-700">{level}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-yellow-600">{p.coins}</td>
+                    <td className="px-6 py-4 text-sm font-semibold text-sunshine">{p.total_coins_earned}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{p.tasks_completed || 0}</td>
                   </tr>
                 )
@@ -2059,23 +1813,12 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
     const newBalance = player.coins - item.price
     const updatedDesk = [...(player.desk_items || []), item.emoji]
 
-    try {
-      await supabase
-        .from('players')
-        .update({
-          coins: newBalance,
-          desk_items: updatedDesk,
-        })
-        .eq('id', player.id)
-
-      onUpdateCoins(-item.price)
-    } catch (e) {
-      console.error('Failed to purchase item:', e)
-    }
+    // Call onUpdateCoins with negative amount and updated desk items
+    onUpdateCoins(-item.price, updatedDesk)
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -2083,9 +1826,15 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
         ← Back to Hub
       </button>
 
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">🛍️ The Shop</h1>
-        <p className="text-gray-600">Spend your coins on cool desk items!</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">🛍️ The Shop</h1>
+          <p className="text-gray-600">Spend your coins on cool desk items!</p>
+        </div>
+        <div className="bg-day px-6 py-3 rounded-lg">
+          <p className="text-sm text-gray-600">Your Balance</p>
+          <p className="text-2xl font-bold text-forest">{player.coins} 💰</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -2100,16 +1849,16 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
             >
               <div className="text-5xl mb-4">{item.emoji}</div>
               <h3 className="font-bold text-gray-900 mb-2">{item.name}</h3>
-              <p className="text-2xl font-bold text-yellow-600 mb-4">{item.price} 💰</p>
+              <p className="text-2xl font-bold text-sunshine mb-4">{item.price} 💰</p>
 
               <button
                 onClick={() => handleBuy(item)}
                 disabled={owned || !canAfford}
                 className={`w-full py-2 rounded-lg font-bold transition ${
                   owned
-                    ? 'bg-[#e8f5ef] text-[#124a38] cursor-default'
+                    ? 'bg-day text-forest cursor-default'
                     : canAfford
-                      ? 'bg-red-600 text-white hover:bg-red-700'
+                      ? 'bg-forest text-white hover:opacity-90'
                       : 'bg-gray-300 text-gray-600 cursor-not-allowed'
                 }`}
               >
@@ -2130,4 +1879,12 @@ function calculateLevel(totalCoins) {
   if (totalCoins >= 300) return 'Manager'
   if (totalCoins >= 100) return 'Analyst'
   return 'Intern'
+}
+
+function getNextLevelThreshold(totalCoins) {
+  if (totalCoins >= 1500) return 2000
+  if (totalCoins >= 700) return 1500
+  if (totalCoins >= 300) return 700
+  if (totalCoins >= 100) return 300
+  return 100
 }
