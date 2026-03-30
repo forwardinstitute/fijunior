@@ -317,7 +317,11 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     }
   }
 
-  const deskItemsEmojis = (player.desk_items || []).slice(0, 8).join(' ')
+  const SHOP_ITEMS = {
+    '🌱': 'Plant', '☕': 'Coffee Mug', '⭐': 'Laptop Sticker', '💡': 'Desk Lamp',
+    '🏆': 'Trophy', '📛': 'Name Plate', '🎧': 'Headphones', '🦆': 'Rubber Duck',
+  }
+  const ownedItems = (player.desk_items || []).map((emoji) => ({ emoji, name: SHOP_ITEMS[emoji] || 'Item' }))
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -442,10 +446,17 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
               </div>
             </div>
 
-            {deskItemsEmojis && (
-              <div className="bg-indigo-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-2">Desk Items</p>
-                <p className="text-2xl">{deskItemsEmojis}</p>
+            {ownedItems.length > 0 && (
+              <div className="bg-day p-4 rounded-lg">
+                <p className="text-sm text-gray-600 mb-3">Your Desk Items</p>
+                <div className="grid grid-cols-4 gap-2">
+                  {ownedItems.map((item, i) => (
+                    <div key={i} className="bg-white rounded-lg p-2 text-center shadow-sm">
+                      <div className="text-2xl mb-1">{item.emoji}</div>
+                      <p className="text-xs text-gray-600">{item.name}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -546,29 +557,40 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
 
   const currentContact = contacts[currentIndex]
 
-  const getSuggestion = async () => {
-    if (!currentContact) return
+  // Auto-fetch AI suggestion when contact changes
+  useEffect(() => {
+    if (currentContact) {
+      getSuggestion(currentContact)
+    }
+  }, [currentIndex, contacts])
+
+  const getSuggestion = async (contact) => {
+    if (!contact) return
 
     setLoadingSuggestion(true)
+    setSuggestion(null)
     try {
       const res = await fetch('/api/suggest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          title: currentContact.title,
-          orgName: currentContact.organisation_name,
-          sector: currentContact.sector,
-          industry: currentContact.industry,
-          companySize: currentContact.company_size,
+          title: contact.title,
+          orgName: contact.org_name,
+          sector: contact.org_sector,
+          industry: contact.org_industry,
+          companySize: contact.company_size,
         }),
       })
 
       const data = await res.json()
       setSuggestion(data)
-      setSelectedType(data.contactType)
-      setSelectedRel(data.relationship)
+      setSelectedType(data.contactType || 'Organisation')
+      setSelectedRel(data.relationship || 'Other')
     } catch (e) {
       console.error('Failed to get suggestion:', e)
+      setSuggestion({ contactType: 'Organisation', relationship: 'Other', reasoning: 'Could not get AI suggestion - please classify manually.' })
+      setSelectedType('Organisation')
+      setSelectedRel('Other')
     }
     setLoadingSuggestion(false)
   }
@@ -678,22 +700,29 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
               </div>
               <div>
                 <p className="text-sm text-gray-600">Organisation</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.organisation_name}</p>
+                <p className="text-lg font-semibold text-gray-900">{currentContact.org_name || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Sector</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.sector}</p>
+                <p className="text-lg font-semibold text-gray-900">{currentContact.org_sector || 'Unknown'}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-600">Industry</p>
-                <p className="text-lg font-semibold text-gray-900">{currentContact.industry}</p>
+                <p className="text-lg font-semibold text-gray-900">{currentContact.org_industry || 'Unknown'}</p>
               </div>
             </div>
           </div>
 
-          {suggestion && (
+          {loadingSuggestion && (
+            <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-lg text-center">
+              <p className="text-gray-700 font-medium">Asking AI for a suggestion...</p>
+              <div className="mt-2 animate-pulse text-2xl">🤔</div>
+            </div>
+          )}
+
+          {suggestion && !loadingSuggestion && (
             <div className="bg-yellow-50 border-2 border-yellow-200 p-6 rounded-lg">
-              <h3 className="font-bold text-gray-900 mb-2">✨ AI Suggestion</h3>
+              <h3 className="font-bold text-gray-900 mb-2">AI thinks...</h3>
               <p className="text-gray-700 mb-4">{suggestion.reasoning}</p>
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div className="bg-white p-3 rounded">
@@ -705,16 +734,9 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
                   <p className="font-semibold">{suggestion.relationship}</p>
                 </div>
               </div>
+              <p className="text-xs text-gray-500 mt-3">You can change the dropdowns below if you disagree!</p>
             </div>
           )}
-
-          <button
-            onClick={getSuggestion}
-            disabled={loadingSuggestion || !!suggestion}
-            className="w-full bg-yellow-500 text-white py-3 rounded-lg font-bold hover:bg-yellow-600 disabled:opacity-50 transition"
-          >
-            {loadingSuggestion ? 'Getting suggestion...' : suggestion ? 'Got suggestion!' : 'Get AI Suggestion'}
-          </button>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -842,6 +864,26 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
 
     uploadLogo(dataUrl)
     setCropMode(false)
+  }
+
+  const skipOrg = async () => {
+    try {
+      await supabase
+        .from('organisations')
+        .update({ logo_url: 'skipped' })
+        .eq('id', currentOrg.id)
+
+      setLogoPreview('')
+      setCropMode(false)
+
+      if (currentIndex < organisations.length - 1) {
+        setCurrentIndex(currentIndex + 1)
+      } else {
+        loadOrganisations()
+      }
+    } catch (e) {
+      console.error('Failed to skip org:', e)
+    }
   }
 
   const uploadLogo = async (dataUrl) => {
@@ -1001,6 +1043,12 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
                     📤 Upload
                   </button>
                 </div>
+                <button
+                  onClick={skipOrg}
+                  className="w-full mt-3 px-4 py-2 bg-gray-200 text-gray-600 rounded-lg hover:bg-gray-300 transition font-medium text-sm"
+                >
+                  Skip this one (defunct / can't find)
+                </button>
               </>
             )}
           </div>
@@ -1072,26 +1120,64 @@ function ArcadeScreen({ player, onNavigate, onUpdateCoins }) {
 
 // Speed Typer Game
 function SpeedTyperGame({ onBack, onUpdateCoins }) {
-  const sentences = [
-    'The quarterly business meeting was productive.',
-    'Success requires focus and dedication.',
-    'Innovation drives modern business forward.',
-    'Teamwork makes the dream work.',
-    'Customer satisfaction is our priority.',
+  const FALLBACK_SENTENCES = [
+    ['Hello and welcome to our team.', 'We work together every day.', 'The office is a busy place.'],
+    ['Good leaders listen to their teams.', 'Working together helps everyone succeed.', 'The best ideas come from teamwork.'],
+    ['Leadership means helping other people grow and develop.', 'The Forward Institute brings leaders from different sectors together.'],
+    ['Responsible leadership requires understanding different perspectives and making thoughtful decisions.', 'The most effective organisations build cultures of trust and collaboration.'],
+    ['Building a more responsible future requires leaders who can navigate complexity with both courage and compassion.'],
   ]
 
-  const [sentence] = useState(sentences[Math.floor(Math.random() * sentences.length)])
+  const [sentence, setSentence] = useState('')
   const [input, setInput] = useState('')
-  const [timeLeft, setTimeLeft] = useState(30)
+  const [timeLeft, setTimeLeft] = useState(60)
   const [gameOver, setGameOver] = useState(false)
-  const [wpm, setWpm] = useState(0)
+  const [round, setRound] = useState(0)
+  const [difficulty, setDifficulty] = useState(1)
+  const [totalWords, setTotalWords] = useState(0)
+  const [totalTime, setTotalTime] = useState(0)
+  const [roundStart, setRoundStart] = useState(null)
+  const [completedRounds, setCompletedRounds] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [streak, setStreak] = useState(0)
+  const [perfectRound, setPerfectRound] = useState(false)
+  const inputRef = useRef(null)
+
+  const fetchSentence = async (diff) => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/typing-sentence', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ difficulty: diff }),
+      })
+      const data = await res.json()
+      if (data.sentence) {
+        setSentence(data.sentence)
+      } else {
+        throw new Error('No sentence')
+      }
+    } catch {
+      const level = Math.min(5, Math.max(1, diff)) - 1
+      const fallbacks = FALLBACK_SENTENCES[level] || FALLBACK_SENTENCES[0]
+      setSentence(fallbacks[Math.floor(Math.random() * fallbacks.length)])
+    }
+    setLoading(false)
+    setRoundStart(Date.now())
+    setInput('')
+    setPerfectRound(false)
+    setTimeout(() => inputRef.current?.focus(), 100)
+  }
 
   useEffect(() => {
-    if (gameOver) return
+    fetchSentence(1)
+  }, [])
+
+  useEffect(() => {
+    if (gameOver || loading) return
     const timer = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
-          calculateWPM()
           setGameOver(true)
           return 0
         }
@@ -1099,37 +1185,121 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
       })
     }, 1000)
     return () => clearInterval(timer)
-  }, [gameOver])
+  }, [gameOver, loading])
 
-  const calculateWPM = () => {
-    const words = input.trim().split(/\s+/).length
-    const minutes = (30 - timeLeft) / 60
-    const calculatedWPM = minutes > 0 ? Math.round(words / minutes) : 0
-    setWpm(calculatedWPM)
+  const completeRound = () => {
+    const elapsed = (Date.now() - roundStart) / 1000
+    const words = sentence.trim().split(/\s+/).length
+    setTotalWords((w) => w + words)
+    setTotalTime((t) => t + elapsed)
+    setCompletedRounds((r) => r + 1)
 
-    const coins = Math.min(20, Math.max(5, Math.round(calculatedWPM / 10)))
-    onUpdateCoins(coins)
+    // Check if it was perfect (no mistakes at time of completion)
+    const wasPerfect = input.trim() === sentence.trim()
+    if (wasPerfect) {
+      setPerfectRound(true)
+      setStreak((s) => s + 1)
+    } else {
+      setStreak(0)
+    }
+
+    // Adaptive difficulty
+    const wpmThisRound = words / (elapsed / 60)
+    let newDiff = difficulty
+    if (wasPerfect && wpmThisRound > 30) {
+      newDiff = Math.min(5, difficulty + 1)
+    } else if (!wasPerfect || wpmThisRound < 15) {
+      newDiff = Math.max(1, difficulty - 1)
+    }
+    setDifficulty(newDiff)
+    setRound((r) => r + 1)
+
+    // Brief celebration then next sentence
+    setTimeout(() => {
+      fetchSentence(newDiff)
+    }, 800)
+  }
+
+  const handleInput = (e) => {
+    const val = e.target.value
+    setInput(val)
+    // Auto-complete when they've typed the full sentence
+    if (val.trim() === sentence.trim()) {
+      completeRound()
+    }
+  }
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && input.trim().length > 0) {
+      completeRound()
+    }
+  }
+
+  // Calculate final stats
+  const finalWPM = totalTime > 0 ? Math.round(totalWords / (totalTime / 60)) : 0
+  const totalCoins = Math.min(30, Math.max(5, completedRounds * 3 + Math.round(finalWPM / 10)))
+
+  // Render character-by-character comparison
+  const renderSentence = () => {
+    if (!sentence) return null
+    return (
+      <p className="text-2xl text-center font-mono leading-relaxed">
+        {sentence.split('').map((char, i) => {
+          let colour = 'text-gray-400'
+          if (i < input.length) {
+            colour = input[i] === char ? 'text-forest font-bold' : 'text-earth font-bold underline'
+          }
+          return (
+            <span key={i} className={colour}>
+              {char}
+            </span>
+          )
+        })}
+      </p>
+    )
   }
 
   if (gameOver) {
+    if (completedRounds === 0) {
+      onUpdateCoins(2) // Participation coins
+    } else {
+      onUpdateCoins(totalCoins)
+    }
+
     return (
       <div className="max-w-2xl mx-auto">
         <button
           onClick={onBack}
-          className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+          className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition"
         >
           ← Back
         </button>
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="text-6xl mb-4">⌨️</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Game Over!</h2>
-          <p className="text-4xl font-bold text-pink-600 mb-2">{wpm} WPM</p>
-          <p className="text-gray-600 mb-6">Words per minute</p>
+          <h2 className="text-3xl font-bold text-night mb-4">Time's Up!</h2>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-day rounded-lg p-4">
+              <p className="text-3xl font-bold text-forest">{finalWPM}</p>
+              <p className="text-sm text-gray-600">Words per minute</p>
+            </div>
+            <div className="bg-day rounded-lg p-4">
+              <p className="text-3xl font-bold text-forest">{completedRounds}</p>
+              <p className="text-sm text-gray-600">Sentences completed</p>
+            </div>
+            <div className="bg-day rounded-lg p-4">
+              <p className="text-3xl font-bold text-sunshine">{totalCoins}</p>
+              <p className="text-sm text-gray-600">Coins earned</p>
+            </div>
+            <div className="bg-day rounded-lg p-4">
+              <p className="text-3xl font-bold text-sky">Level {difficulty}</p>
+              <p className="text-sm text-gray-600">Difficulty reached</p>
+            </div>
+          </div>
           <button
             onClick={onBack}
-            className="bg-pink-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-pink-700 transition"
+            className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition"
           >
-            Back to Games
+            Back to Arcade
           </button>
         </div>
       </div>
@@ -1140,29 +1310,61 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
     <div className="max-w-2xl mx-auto">
       <button
         onClick={onBack}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition"
       >
         ← Back
       </button>
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">Speed Typer</h1>
-
-        <div className="mb-6 text-center">
-          <div className="text-5xl font-bold text-pink-600">{timeLeft}s</div>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-night">Speed Typer</h1>
+          <div className="flex gap-4 text-sm">
+            <span className="bg-day px-3 py-1 rounded-full">Round {round + 1}</span>
+            <span className="bg-day px-3 py-1 rounded-full">Level {difficulty}/5</span>
+            <span className={`px-3 py-1 rounded-full font-bold ${timeLeft <= 10 ? 'bg-earth text-white' : 'bg-forest text-white'}`}>
+              {timeLeft}s
+            </span>
+          </div>
         </div>
 
-        <div className="bg-gray-100 p-6 rounded-lg mb-6 min-h-24 flex items-center justify-center">
-          <p className="text-2xl text-gray-900 text-center">{sentence}</p>
-        </div>
+        {streak > 1 && (
+          <div className="bg-sunshine/20 border border-sunshine rounded-lg px-4 py-2 mb-4 text-center text-sm font-bold text-night">
+            {streak} perfect streak! 🔥
+          </div>
+        )}
 
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          autoFocus
-          className="w-full p-4 border-2 border-pink-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 text-lg"
-          placeholder="Start typing..."
-        />
+        {loading ? (
+          <div className="bg-day p-8 rounded-lg mb-6 min-h-24 flex items-center justify-center">
+            <p className="text-gray-500">AI is thinking up a sentence... 🤔</p>
+          </div>
+        ) : (
+          <>
+            {perfectRound && (
+              <div className="bg-green-50 border border-green-300 rounded-lg px-4 py-3 mb-4 text-center text-green-700 font-bold animate-pulse">
+                Perfect! ✨ Next sentence coming...
+              </div>
+            )}
+            <div className="bg-day p-6 rounded-lg mb-6 min-h-24 flex items-center justify-center">
+              {renderSentence()}
+            </div>
+
+            <input
+              ref={inputRef}
+              type="text"
+              value={input}
+              onChange={handleInput}
+              onKeyDown={handleKeyDown}
+              autoFocus
+              disabled={perfectRound}
+              className="w-full p-4 border-2 border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest text-lg mb-3"
+              placeholder="Start typing... (press Enter when done)"
+            />
+
+            <p className="text-xs text-gray-400 text-center">
+              Type the sentence above. It auto-submits when perfect, or press Enter to submit early.
+              {completedRounds > 0 && ` Sentences done: ${completedRounds}`}
+            </p>
+          </>
+        )}
       </div>
     </div>
   )
@@ -1170,20 +1372,43 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
 
 // Memory Match Game
 function MemoryGame({ onBack, onUpdateCoins }) {
-  const emojis = ['🏢', '💼', '📊', '👔', '🎯', '📈', '💰', '🏆']
-  const deck = [...emojis, ...emojis].sort(() => Math.random() - 0.5)
+  const THEMES = [
+    { name: 'Office Life', emojis: ['🏢', '💼', '📊', '👔', '🎯', '📈', '💰', '🏆'] },
+    { name: 'Nature', emojis: ['🌳', '🌻', '🦋', '🌈', '🍄', '🐝', '🌸', '🦊'] },
+    { name: 'Space', emojis: ['🚀', '🌙', '⭐', '🪐', '👽', '🛸', '☄️', '🌍'] },
+    { name: 'Food', emojis: ['🍕', '🍩', '🧁', '🍣', '🌮', '🍦', '🥐', '🍪'] },
+    { name: 'Sport', emojis: ['⚽', '🏀', '🎾', '🏈', '🏓', '🎳', '🥊', '🏄'] },
+    { name: 'Music', emojis: ['🎵', '🎸', '🥁', '🎹', '🎺', '🎻', '🎤', '🎧'] },
+    { name: 'Animals', emojis: ['🐶', '🐱', '🐼', '🦁', '🐸', '🦄', '🐙', '🦜'] },
+    { name: 'Travel', emojis: ['✈️', '🗼', '🏖️', '🎡', '🚂', '⛵', '🏔️', '🎪'] },
+  ]
+
+  // Pick a random theme and shuffle ONCE on mount
+  const [theme] = useState(() => THEMES[Math.floor(Math.random() * THEMES.length)])
+  const [deck] = useState(() => {
+    const pairs = [...theme.emojis, ...theme.emojis]
+    // Fisher-Yates shuffle for proper randomisation
+    for (let i = pairs.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pairs[i], pairs[j]] = [pairs[j], pairs[i]]
+    }
+    return pairs
+  })
 
   const [revealed, setRevealed] = useState(new Array(16).fill(false))
   const [matched, setMatched] = useState(new Array(16).fill(false))
   const [firstCard, setFirstCard] = useState(null)
   const [secondCard, setSecondCard] = useState(null)
+  const [locked, setLocked] = useState(false)
   const [time, setTime] = useState(0)
+  const [moves, setMoves] = useState(0)
   const [gameWon, setGameWon] = useState(false)
 
   useEffect(() => {
+    if (gameWon) return
     const timer = setInterval(() => setTime((t) => t + 1), 1000)
     return () => clearInterval(timer)
-  }, [])
+  }, [gameWon])
 
   useEffect(() => {
     if (matched.every(Boolean)) {
@@ -1194,13 +1419,16 @@ function MemoryGame({ onBack, onUpdateCoins }) {
   }, [matched])
 
   const handleCardClick = (idx) => {
-    if (revealed[idx] || matched[idx]) return
+    if (locked || revealed[idx] || matched[idx]) return
+
     if (firstCard === null) {
       const newRevealed = [...revealed]
       newRevealed[idx] = true
       setRevealed(newRevealed)
       setFirstCard(idx)
-    } else if (secondCard === null) {
+    } else if (secondCard === null && idx !== firstCard) {
+      setLocked(true)
+      setMoves((m) => m + 1)
       const newRevealed = [...revealed]
       newRevealed[idx] = true
       setRevealed(newRevealed)
@@ -1210,18 +1438,22 @@ function MemoryGame({ onBack, onUpdateCoins }) {
         const newMatched = [...matched]
         newMatched[firstCard] = true
         newMatched[idx] = true
-        setMatched(newMatched)
-        setFirstCard(null)
-        setSecondCard(null)
-      } else {
         setTimeout(() => {
-          const newRevealed = [...revealed]
-          newRevealed[firstCard] = false
-          newRevealed[idx] = false
-          setRevealed(newRevealed)
+          setMatched(newMatched)
           setFirstCard(null)
           setSecondCard(null)
-        }, 600)
+          setLocked(false)
+        }, 300)
+      } else {
+        setTimeout(() => {
+          const newRevealed2 = [...newRevealed]
+          newRevealed2[firstCard] = false
+          newRevealed2[idx] = false
+          setRevealed(newRevealed2)
+          setFirstCard(null)
+          setSecondCard(null)
+          setLocked(false)
+        }, 800)
       }
     }
   }
@@ -1231,19 +1463,29 @@ function MemoryGame({ onBack, onUpdateCoins }) {
       <div className="max-w-2xl mx-auto">
         <button
           onClick={onBack}
-          className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+          className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition"
         >
           ← Back
         </button>
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
           <div className="text-6xl mb-4">🧠</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">You Won!</h2>
-          <p className="text-2xl font-bold text-[#195e47] mb-2">{time}s</p>
+          <h2 className="text-3xl font-bold text-night mb-2">You Won!</h2>
+          <p className="text-sm text-gray-500 mb-4">Theme: {theme.name}</p>
+          <div className="grid grid-cols-2 gap-4 mb-6 max-w-xs mx-auto">
+            <div className="bg-day rounded-lg p-3">
+              <p className="text-2xl font-bold text-forest">{time}s</p>
+              <p className="text-xs text-gray-600">Time</p>
+            </div>
+            <div className="bg-day rounded-lg p-3">
+              <p className="text-2xl font-bold text-forest">{moves}</p>
+              <p className="text-xs text-gray-600">Moves</p>
+            </div>
+          </div>
           <button
             onClick={onBack}
-            className="bg-[#195e47] text-white px-8 py-3 rounded-lg font-bold hover:bg-[#124a38] transition"
+            className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition"
           >
-            Back to Games
+            Back to Arcade
           </button>
         </div>
       </div>
@@ -1254,23 +1496,32 @@ function MemoryGame({ onBack, onUpdateCoins }) {
     <div className="max-w-2xl mx-auto">
       <button
         onClick={onBack}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition"
       >
         ← Back
       </button>
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Memory Match</h1>
-        <p className="text-gray-600 mb-6">Time: {time}s</p>
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold text-night">Memory Match</h1>
+          <span className="text-sm bg-day px-3 py-1 rounded-full">{theme.name}</span>
+        </div>
+        <div className="flex gap-4 text-sm text-gray-600 mb-6">
+          <span>Time: {time}s</span>
+          <span>Moves: {moves}</span>
+          <span>Pairs: {matched.filter(Boolean).length / 2}/8</span>
+        </div>
 
         <div className="grid grid-cols-4 gap-3">
           {deck.map((emoji, idx) => (
             <button
               key={idx}
               onClick={() => handleCardClick(idx)}
-              className={`aspect-square text-4xl rounded-lg font-bold transition transform hover:scale-110 ${
-                revealed[idx] || matched[idx]
-                  ? 'bg-[#dceae4] text-gray-900'
-                  : 'bg-gradient-to-br from-[#195e47] to-[#124a38] text-[#dceae4]'
+              className={`aspect-square text-4xl rounded-lg font-bold transition-all duration-300 ${
+                matched[idx]
+                  ? 'bg-green-100 text-gray-900 scale-95'
+                  : revealed[idx]
+                    ? 'bg-day text-gray-900 scale-105'
+                    : 'bg-gradient-to-br from-forest to-[#124a38] text-day hover:scale-110 cursor-pointer'
               }`}
             >
               {revealed[idx] || matched[idx] ? emoji : '?'}
@@ -1410,68 +1661,88 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
 
 // Trivia Game
 function TriviaGame({ onBack, onUpdateCoins }) {
-  const questions = [
-    {
-      q: 'What does CEO stand for?',
-      options: ['Chief Executive Officer', 'Chief Equipment Owner', 'Central Employee Office'],
-      correct: 0,
-    },
-    {
-      q: 'What is a business meeting called where people discuss ideas?',
-      options: ['Brainstorm', 'Football match', 'Playground'],
-      correct: 0,
-    },
-    {
-      q: 'What document lists a company\'s money coming in and going out?',
-      options: ['Budget', 'Diary', 'Menu'],
-      correct: 0,
-    },
-    {
-      q: 'What is the place where people work together called?',
-      options: ['Office', 'School', 'Hospital'],
-      correct: 0,
-    },
-    {
-      q: 'What skill is important for working in a team?',
-      options: ['Communication', 'Gaming', 'Sleeping'],
-      correct: 0,
-    },
-  ]
-
+  const [questions, setQuestions] = useState([])
   const [question, setQuestion] = useState(0)
   const [score, setScore] = useState(0)
   const [finished, setFinished] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [answered, setAnswered] = useState(null)
+  const [showFact, setShowFact] = useState(false)
+
+  useEffect(() => {
+    fetchQuestions()
+  }, [])
+
+  const fetchQuestions = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/trivia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 5 }),
+      })
+      const data = await res.json()
+      if (data.questions?.length) {
+        setQuestions(data.questions)
+      } else {
+        throw new Error('No questions')
+      }
+    } catch {
+      setQuestions([
+        { q: 'In what year was the NHS founded?', options: ['1939', '1948', '1955', '1962'], correct: 1, funFact: 'The NHS was founded by Aneurin Bevan on 5 July 1948.' },
+        { q: 'What is the tallest building in London?', options: ['The Gherkin', 'Canary Wharf', 'The Shard', 'BT Tower'], correct: 2, funFact: 'The Shard stands at 310 metres tall.' },
+        { q: 'Which planet is closest to the Sun?', options: ['Venus', 'Mercury', 'Mars', 'Earth'], correct: 1, funFact: 'Mercury orbits the Sun in just 88 Earth days.' },
+        { q: 'What does HTML stand for?', options: ['Hyper Text Markup Language', 'High Tech Modern Language', 'Home Tool Markup Language', 'Hyper Transfer Mail Language'], correct: 0, funFact: 'HTML was created by Tim Berners-Lee in 1991.' },
+        { q: 'Which UK city has the most canals?', options: ['London', 'Manchester', 'Birmingham', 'Leeds'], correct: 2, funFact: 'Birmingham has more canals than Venice!' },
+      ])
+    }
+    setLoading(false)
+  }
 
   const handleAnswer = (idx) => {
+    if (answered !== null) return
+    setAnswered(idx)
     if (idx === questions[question].correct) {
       setScore(score + 1)
       onUpdateCoins(5)
     }
+    setShowFact(true)
 
-    if (question < questions.length - 1) {
-      setQuestion(question + 1)
-    } else {
-      setFinished(true)
-    }
+    setTimeout(() => {
+      setAnswered(null)
+      setShowFact(false)
+      if (question < questions.length - 1) {
+        setQuestion(question + 1)
+      } else {
+        setFinished(true)
+      }
+    }, 2500)
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-pulse text-2xl mb-4">🧠</div>
+          <p className="text-gray-600">AI is writing quiz questions...</p>
+        </div>
+      </div>
+    )
   }
 
   if (finished) {
+    const totalCoins = score * 5
     return (
       <div className="max-w-2xl mx-auto">
-        <button
-          onClick={onBack}
-          className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-        >
-          ← Back
-        </button>
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">❓</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Quiz Complete!</h2>
-          <p className="text-2xl font-bold text-[#195e47] mb-2">{score}/5 Correct</p>
-          <button
-            onClick={onBack}
-            className="bg-[#195e47] text-white px-8 py-3 rounded-lg font-bold hover:bg-[#124a38] transition"
-          >
+          <div className="text-6xl mb-4">{score >= 4 ? '🏆' : score >= 2 ? '👏' : '🤔'}</div>
+          <h2 className="text-3xl font-bold text-night mb-2">Quiz Complete!</h2>
+          <p className="text-4xl font-bold text-forest mb-1">{score}/{questions.length}</p>
+          <p className="text-gray-600 mb-2">correct answers</p>
+          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
+          <button onClick={onBack} className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition">
             Back to Break Room
           </button>
         </div>
@@ -1480,34 +1751,52 @@ function TriviaGame({ onBack, onUpdateCoins }) {
   }
 
   const q = questions[question]
+  if (!q) return null
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button
-        onClick={onBack}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-      >
-        ← Back
-      </button>
+      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Office Trivia</h1>
-        <p className="text-gray-600 mb-6">
-          Question {question + 1}/5
-        </p>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-night">Trivia</h1>
+          <div className="flex gap-3 text-sm">
+            <span className="bg-day px-3 py-1 rounded-full">Q{question + 1}/{questions.length}</span>
+            <span className="bg-forest text-white px-3 py-1 rounded-full">{score} correct</span>
+          </div>
+        </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">{q.q}</h2>
+        <h2 className="text-xl font-bold text-night mb-6">{q.q}</h2>
 
         <div className="space-y-3">
-          {q.options.map((option, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleAnswer(idx)}
-              className="w-full bg-[#e8f5ef] text-[#124a38] p-4 rounded-lg hover:bg-[#dceae4] transition font-semibold text-lg"
-            >
-              {option}
-            </button>
-          ))}
+          {q.options.map((option, idx) => {
+            let style = 'bg-day text-night hover:bg-gray-200'
+            if (answered !== null) {
+              if (idx === q.correct) {
+                style = 'bg-green-100 text-green-800 border-2 border-green-400 font-bold'
+              } else if (idx === answered && idx !== q.correct) {
+                style = 'bg-red-100 text-red-800 border-2 border-red-300'
+              } else {
+                style = 'bg-gray-100 text-gray-400'
+              }
+            }
+            return (
+              <button
+                key={idx}
+                onClick={() => handleAnswer(idx)}
+                disabled={answered !== null}
+                className={`w-full p-4 rounded-lg transition font-semibold text-lg text-left ${style}`}
+              >
+                {option}
+              </button>
+            )
+          })}
         </div>
+
+        {showFact && q.funFact && (
+          <div className="mt-4 bg-sky/20 border border-sky rounded-lg p-4 text-sm text-night">
+            <strong>Fun fact:</strong> {q.funFact}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -1515,48 +1804,88 @@ function TriviaGame({ onBack, onUpdateCoins }) {
 
 // Odd One Out Game
 function OddOneGame({ onBack, onUpdateCoins }) {
-  const sets = [
-    { items: ['Manager', 'Doctor', 'Engineer'], odd: 'Doctor' },
-    { items: ['Coffee', 'Email', 'Desk'], odd: 'Email' },
-    { items: ['Lion', 'Manager', 'Director'], odd: 'Lion' },
-    { items: ['Laptop', 'Dog', 'Mouse'], odd: 'Dog' },
-    { items: ['Meeting', 'Picnic', 'Conference'], odd: 'Picnic' },
-  ]
-
+  const [sets, setSets] = useState([])
   const [round, setRound] = useState(0)
   const [score, setScore] = useState(0)
   const [finished, setFinished] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [answered, setAnswered] = useState(null)
+  const [showHint, setShowHint] = useState(false)
+
+  useEffect(() => {
+    fetchSets()
+  }, [])
+
+  const fetchSets = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/odd-one-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 5 }),
+      })
+      const data = await res.json()
+      if (data.sets?.length) {
+        setSets(data.sets)
+      } else {
+        throw new Error('No sets')
+      }
+    } catch {
+      setSets([
+        { items: ['Salmon', 'Trout', 'Tuna', 'Penguin'], odd: 'Penguin', hint: 'Three are fish, one is a bird' },
+        { items: ['Mars', 'Jupiter', 'Moon', 'Saturn'], odd: 'Moon', hint: 'Three are planets, one orbits a planet' },
+        { items: ['Python', 'Cobra', 'Java', 'Ruby'], odd: 'Cobra', hint: 'Three are programming languages, one is just a snake' },
+        { items: ['Violin', 'Trumpet', 'Cello', 'Viola'], odd: 'Trumpet', hint: 'Three are string instruments, one is brass' },
+        { items: ['Thames', 'Ben Nevis', 'Severn', 'Mersey'], odd: 'Ben Nevis', hint: 'Three are rivers, one is a mountain' },
+      ])
+    }
+    setLoading(false)
+  }
 
   const handleChoice = (item) => {
+    if (answered !== null) return
+    setAnswered(item)
     if (item === sets[round].odd) {
       setScore(score + 1)
-      onUpdateCoins(3)
+      onUpdateCoins(5)
     }
+    setShowHint(true)
 
-    if (round < sets.length - 1) {
-      setRound(round + 1)
-    } else {
-      setFinished(true)
-    }
+    setTimeout(() => {
+      setAnswered(null)
+      setShowHint(false)
+      if (round < sets.length - 1) {
+        setRound(round + 1)
+      } else {
+        setFinished(true)
+      }
+    }, 2500)
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-pulse text-2xl mb-4">👀</div>
+          <p className="text-gray-600">AI is creating puzzles...</p>
+        </div>
+      </div>
+    )
   }
 
   if (finished) {
+    const totalCoins = score * 5
     return (
       <div className="max-w-2xl mx-auto">
-        <button
-          onClick={onBack}
-          className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-        >
-          ← Back
-        </button>
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">👀</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete!</h2>
-          <p className="text-2xl font-bold text-orange-600 mb-2">{score}/5 Correct</p>
-          <button
-            onClick={onBack}
-            className="bg-orange-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-orange-700 transition"
-          >
+          <div className="text-6xl mb-4">{score >= 4 ? '🧠' : score >= 2 ? '👍' : '😅'}</div>
+          <h2 className="text-3xl font-bold text-night mb-2">Complete!</h2>
+          <p className="text-4xl font-bold text-earth mb-1">{score}/{sets.length}</p>
+          <p className="text-gray-600 mb-2">correct answers</p>
+          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
+          <button onClick={onBack} className="bg-earth text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition">
             Back to Break Room
           </button>
         </div>
@@ -1564,31 +1893,53 @@ function OddOneGame({ onBack, onUpdateCoins }) {
     )
   }
 
+  const currentSet = sets[round]
+  if (!currentSet) return null
+
   return (
     <div className="max-w-2xl mx-auto">
-      <button
-        onClick={onBack}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-      >
-        ← Back
-      </button>
+      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Spot the Odd One Out</h1>
-        <p className="text-gray-600 mb-6">Round {round + 1}/5 - Score: {score}</p>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-night">Odd One Out</h1>
+          <div className="flex gap-3 text-sm">
+            <span className="bg-day px-3 py-1 rounded-full">Round {round + 1}/{sets.length}</span>
+            <span className="bg-earth text-white px-3 py-1 rounded-full">{score} correct</span>
+          </div>
+        </div>
 
-        <h2 className="text-xl font-bold text-gray-900 mb-6">Which one doesn't belong?</h2>
+        <h2 className="text-lg font-bold text-night mb-6">Which one doesn't belong with the others?</h2>
 
         <div className="grid grid-cols-2 gap-4">
-          {sets[round].items.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleChoice(item)}
-              className="bg-orange-100 text-orange-800 p-4 rounded-lg hover:bg-orange-200 transition font-semibold text-lg"
-            >
-              {item}
-            </button>
-          ))}
+          {currentSet.items.map((item, idx) => {
+            let style = 'bg-day text-night hover:bg-earth/10 hover:border-earth border-2 border-transparent'
+            if (answered !== null) {
+              if (item === currentSet.odd) {
+                style = 'bg-green-100 text-green-800 border-2 border-green-400 font-bold'
+              } else if (item === answered && item !== currentSet.odd) {
+                style = 'bg-red-100 text-red-800 border-2 border-red-300'
+              } else {
+                style = 'bg-gray-100 text-gray-400 border-2 border-transparent'
+              }
+            }
+            return (
+              <button
+                key={idx}
+                onClick={() => handleChoice(item)}
+                disabled={answered !== null}
+                className={`p-6 rounded-lg transition font-semibold text-xl text-center ${style}`}
+              >
+                {item}
+              </button>
+            )
+          })}
         </div>
+
+        {showHint && currentSet.hint && (
+          <div className="mt-4 bg-earth/10 border border-earth/30 rounded-lg p-4 text-sm text-night">
+            <strong>Why?</strong> {currentSet.hint}
+          </div>
+        )}
       </div>
     </div>
   )

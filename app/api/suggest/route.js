@@ -43,16 +43,16 @@ export async function POST(request) {
   try {
     const { title, orgName, sector, industry, companySize } = await request.json()
 
-    if (!title || !orgName) {
+    if (!title && !orgName) {
       return Response.json(
-        { error: 'Missing required fields: title, orgName' },
-        { status: 400 }
+        { contactType: 'Organisation', relationship: 'Other', reasoning: 'No job title or organisation provided, so defaulting to Organisation / Other.' }
       )
     }
 
-    const prompt = `You are helping classify contacts for the Forward Institute, a UK leadership organisation that works with senior leaders across sectors. Given the following contact information, suggest the most appropriate Contact Type and Relationship values.
+    const prompt = `You are helping classify contacts for the Forward Institute, a UK leadership organisation that works with senior leaders across sectors to develop responsible leadership. Given the following contact information, suggest the most appropriate Contact Type and Relationship values.
 
-Contact: ${title} at ${orgName}
+Contact job title: ${title || 'Not provided'}
+Organisation: ${orgName || 'Unknown'}
 Sector: ${sector || 'Unknown'}
 Industry: ${industry || 'Unknown'}
 Company Size: ${companySize || 'Unknown'}
@@ -60,8 +60,16 @@ Company Size: ${companySize || 'Unknown'}
 Contact Type options: ${CONTACT_TYPES.join(', ')}
 Relationship options: ${RELATIONSHIPS.join(', ')}
 
-Respond in JSON format: { "contactType": "...", "relationship": "...", "reasoning": "..." }
-The reasoning should be 1-2 sentences explaining your suggestion in simple language a teenager could understand.`
+IMPORTANT RULES:
+- If the job title is unclear, a military rank, an abbreviation you don't recognise, or seems like jargon rather than a standard business title, default to contactType "Organisation" and relationship "Other"
+- "Organisation" is the most common Contact Type - use it unless there's a clear reason not to (e.g. the title mentions HR, recruitment, talent, or people)
+- If the title contains HR, People, Talent, L&D, or similar, use "Human Resources" as the Contact Type
+- PA, EA, or assistant titles should get relationship "Personal Assistant"
+- CEO, Chief Executive, Managing Director should get relationship "Chief Executive Officer"
+- Senior titles (Director, Head of, VP) at the organisation should get relationship "Senior Leader" or "Line Manager"
+
+Respond ONLY with JSON: { "contactType": "...", "relationship": "...", "reasoning": "..." }
+The reasoning should be 1-2 sentences explaining your suggestion in simple, friendly language a teenager could understand.`
 
     const message = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
