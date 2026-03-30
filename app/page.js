@@ -1141,6 +1141,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
   const [loading, setLoading] = useState(true)
   const [streak, setStreak] = useState(0)
   const [perfectRound, setPerfectRound] = useState(false)
+  const [coinsPaid, setCoinsPaid] = useState(false)
   const inputRef = useRef(null)
 
   const fetchSentence = async (diff) => {
@@ -1259,13 +1260,19 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
     )
   }
 
-  if (gameOver) {
-    if (completedRounds === 0) {
-      onUpdateCoins(2) // Participation coins
-    } else {
-      onUpdateCoins(totalCoins)
+  // Pay coins exactly once when game ends
+  useEffect(() => {
+    if (gameOver && !coinsPaid) {
+      setCoinsPaid(true)
+      if (completedRounds === 0) {
+        onUpdateCoins(2)
+      } else {
+        onUpdateCoins(totalCoins)
+      }
     }
+  }, [gameOver])
 
+  if (gameOver) {
     return (
       <div className="max-w-2xl mx-auto">
         <button
