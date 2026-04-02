@@ -442,14 +442,21 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     }
   }
 
-  const SHOP_ITEMS = {
-    '🌱': 'Plant', '☕': 'Coffee Mug', '⭐': 'Laptop Sticker', '💡': 'Desk Lamp',
-    '🏆': 'Trophy', '📛': 'Name Plate', '🎧': 'Headphones', '🦆': 'Rubber Duck',
+  // Desk item positions - where each item sits on the visual desk
+  const DESK_ITEMS = {
+    '🌱': { name: 'Plant', top: '8%', left: '2%', size: 'text-4xl', label: 'On the windowsill' },
+    '☕': { name: 'Coffee Mug', top: '52%', left: '68%', size: 'text-3xl', label: 'Next to the keyboard' },
+    '⭐': { name: 'Laptop Sticker', top: '28%', left: '38%', size: 'text-2xl', label: 'On the laptop' },
+    '💡': { name: 'Desk Lamp', top: '12%', left: '75%', size: 'text-4xl', label: 'Corner of desk' },
+    '🏆': { name: 'Trophy', top: '6%', left: '88%', size: 'text-4xl', label: 'Pride of place' },
+    '📛': { name: 'Name Plate', top: '58%', left: '30%', size: 'text-2xl', label: 'Front of desk' },
+    '🎧': { name: 'Headphones', top: '18%', left: '55%', size: 'text-3xl', label: 'On the monitor' },
+    '🦆': { name: 'Rubber Duck', top: '48%', left: '18%', size: 'text-3xl', label: 'Debugging buddy' },
   }
-  const ownedItems = (player.desk_items || []).map((emoji) => ({ emoji, name: SHOP_ITEMS[emoji] || 'Item' }))
+  const ownedEmojis = player.desk_items || []
 
   return (
-    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-5xl mx-auto p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -457,159 +464,262 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
         ← Back to Hub
       </button>
 
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Your Desk</h1>
-
-        {/* Avatar Section */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-          <div className="md:col-span-1">
-            <h3 className="font-bold text-gray-900 mb-4">Profile Photo</h3>
-
-            <div className="relative">
-              {cropMode ? (
-                <div className="bg-gray-100 p-4 rounded-lg">
-                  <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden">
-                    <img
-                      ref={imageRef}
-                      src={avatarPreview}
-                      alt="Crop"
-                      className="w-full h-full object-cover"
-                      style={{
-                        transform: `scale(${zoom})`,
-                        transformOrigin: 'center',
-                      }}
-                      onLoad={() => {
-                        if (imageRef.current) {
-                          const ratio = imageRef.current.offsetWidth / imageRef.current.naturalWidth
-                          setZoom(1 / ratio)
-                        }
-                      }}
-                    />
-                  </div>
-                  <input
-                    type="range"
-                    min="1"
-                    max="3"
-                    step="0.1"
-                    value={zoom}
-                    onChange={(e) => setZoom(parseFloat(e.target.value))}
-                    className="w-full mt-4"
-                  />
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={saveCroppedImage}
-                      className="flex-1 bg-forest text-white py-2 rounded-lg hover:opacity-90 transition"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => {
-                        setCropMode(false)
-                        setAvatarPreview('')
-                      }}
-                      className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-gray-300 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="w-48 h-48 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-5xl overflow-hidden">
-                    {avatarPreview ? (
-                      <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      player.name.charAt(0).toUpperCase()
-                    )}
-                  </div>
-                  <div className="flex gap-2 mt-4">
-                    <button
-                      onClick={handleImageSearch}
-                      className="flex-1 px-4 py-2 bg-day text-forest rounded-lg hover:bg-gray-200 transition text-sm"
-                    >
-                      🔍 Search
-                    </button>
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      className="flex-1 px-4 py-2 bg-forest text-white rounded-lg hover:opacity-90 transition text-sm"
-                    >
-                      📤 Upload
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleImageSelect}
-              className="hidden"
-            />
-            <canvas ref={canvasRef} className="hidden" />
-          </div>
-
-          {/* Stats Section */}
-          <div className="md:col-span-2 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-day p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Level</p>
-                <p className="text-2xl font-bold text-forest">{level}</p>
-              </div>
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Total Coins</p>
-                <p className="text-2xl font-bold text-sunshine">{player.total_coins_earned}</p>
-              </div>
-              <div className="bg-day p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Coins Available</p>
-                <p className="text-2xl font-bold text-forest">{player.coins}</p>
-              </div>
-              <div className="bg-purple-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Tasks Completed</p>
-                <p className="text-2xl font-bold text-purple-600">{player.tasks_completed || 0}</p>
-              </div>
-            </div>
-
-            {ownedItems.length > 0 && (
-              <div className="bg-day p-4 rounded-lg">
-                <p className="text-sm text-gray-600 mb-3">Your Desk Items</p>
-                <div className="grid grid-cols-4 gap-2">
-                  {ownedItems.map((item, i) => (
-                    <div key={i} className="bg-white rounded-lg p-2 text-center shadow-sm">
-                      <div className="text-2xl mb-1">{item.emoji}</div>
-                      <p className="text-xs text-gray-600">{item.name}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+      {/* Visual Desk Illustration */}
+      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold text-night">{player.name}'s Desk</h1>
+          <div className="flex items-center gap-2">
+            <span className="text-sm bg-forest text-white px-3 py-1 rounded-full">{level}</span>
+            <span className="text-sm bg-sunshine text-night px-3 py-1 rounded-full">{player.coins} 💰</span>
           </div>
         </div>
 
-        {/* Achievements Section */}
-        <div>
-          <h3 className="font-bold text-gray-900 mb-4">Achievements</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { emoji: '📸', title: 'Picture Perfect', unlocked: player.achievements?.includes('Picture Perfect') },
-              { emoji: '🏆', title: 'First Classifier', unlocked: player.achievements?.includes('First Classifier') },
-              { emoji: '🔥', title: 'On Fire', unlocked: player.achievements?.includes('On Fire') },
-              { emoji: '💎', title: 'Whale', unlocked: player.achievements?.includes('Whale') },
-            ].map((achievement, idx) => (
-              <div
-                key={idx}
-                className={`p-4 rounded-lg text-center transition ${
-                  achievement.unlocked
-                    ? 'bg-yellow-100 border-2 border-yellow-400'
-                    : 'bg-gray-100 opacity-50'
-                }`}
-              >
-                <div className="text-3xl mb-2">{achievement.emoji}</div>
-                <p className="text-sm font-semibold text-gray-900">{achievement.title}</p>
-              </div>
-            ))}
+        <div className="relative w-full rounded-xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+          {/* Room background - wall */}
+          <div className="absolute inset-0 bg-gradient-to-b from-sky/30 to-sky/10"></div>
+
+          {/* Window */}
+          <div className="absolute top-4 left-4 w-28 h-24 bg-sky/40 rounded border-4 border-white/80 shadow-inner">
+            <div className="absolute inset-0 border-r-2 border-b-2 border-white/50" style={{ left: '50%', top: '50%' }}></div>
+            <div className="w-full h-1/2 border-b-2 border-white/50"></div>
           </div>
+
+          {/* Desk surface */}
+          <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-amber-700 to-amber-800 rounded-t-sm">
+            {/* Wood grain lines */}
+            <div className="absolute top-3 left-0 right-0 h-px bg-amber-600/40"></div>
+            <div className="absolute top-8 left-0 right-0 h-px bg-amber-900/20"></div>
+            <div className="absolute top-14 left-0 right-0 h-px bg-amber-600/30"></div>
+            {/* Desk edge */}
+            <div className="absolute top-0 left-0 right-0 h-2 bg-amber-900/30 rounded-t"></div>
+          </div>
+
+          {/* Monitor */}
+          <div className="absolute" style={{ top: '12%', left: '30%', width: '40%' }}>
+            <div className="bg-gray-800 rounded-lg p-1 shadow-xl">
+              <div className="bg-gradient-to-br from-forest/80 to-forest rounded aspect-video flex items-center justify-center">
+                <div className="text-center text-white">
+                  <p className="text-xs font-bold opacity-80">FORWARD HQ</p>
+                  <p className="text-lg">👋</p>
+                  <p className="text-xs opacity-60">{player.name}</p>
+                </div>
+              </div>
+            </div>
+            {/* Monitor stand */}
+            <div className="mx-auto w-8 h-3 bg-gray-700"></div>
+            <div className="mx-auto w-16 h-1 bg-gray-600 rounded-b"></div>
+          </div>
+
+          {/* Keyboard */}
+          <div className="absolute bg-gray-300 rounded shadow-md" style={{ top: '62%', left: '32%', width: '28%', height: '8%' }}>
+            <div className="absolute inset-1 bg-gray-200 rounded flex items-center justify-center">
+              <div className="flex gap-px">
+                {[...Array(12)].map((_, i) => (
+                  <div key={i} className="w-1.5 h-1.5 bg-gray-400 rounded-sm"></div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Mouse */}
+          <div className="absolute bg-gray-300 rounded-full shadow" style={{ top: '64%', left: '65%', width: '3%', height: '5%' }}></div>
+
+          {/* Chair back (behind desk) */}
+          <div className="absolute bg-gray-700 rounded-t-xl shadow-lg" style={{ bottom: '44%', left: '40%', width: '20%', height: '15%' }}>
+            <div className="absolute inset-2 rounded-t bg-gray-600"></div>
+          </div>
+
+          {/* Photo frame on wall */}
+          <div className="absolute bg-amber-900 rounded shadow-md p-1" style={{ top: '5%', left: '55%', width: '12%' }}>
+            <div className="bg-white rounded-sm aspect-square flex items-center justify-center overflow-hidden">
+              {avatarPreview ? (
+                <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl">🖼️</span>
+              )}
+            </div>
+          </div>
+
+          {/* Owned items placed on the desk */}
+          {Object.entries(DESK_ITEMS).map(([emoji, config]) => {
+            const isOwned = ownedEmojis.includes(emoji)
+            if (!isOwned) return null
+            return (
+              <div
+                key={emoji}
+                className="absolute transition-all duration-500 group cursor-default"
+                style={{ top: config.top, left: config.left }}
+                title={config.name}
+              >
+                <span className={`${config.size} drop-shadow-lg hover:scale-125 transition-transform inline-block`}>
+                  {emoji}
+                </span>
+                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-night/80 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                  {config.name}
+                </div>
+              </div>
+            )
+          })}
+
+          {/* Empty desk message */}
+          {ownedEmojis.length === 0 && (
+            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center">
+              <p className="text-amber-200 text-sm font-medium bg-amber-900/60 px-4 py-2 rounded-lg">
+                Your desk is empty! Visit the Shop to buy items
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Profile & Stats Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Profile Photo */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h3 className="font-bold text-night mb-4">Profile Photo</h3>
+          <div className="relative">
+            {cropMode ? (
+              <div className="bg-gray-100 p-4 rounded-lg">
+                <div className="relative w-full aspect-square bg-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    ref={imageRef}
+                    src={avatarPreview}
+                    alt="Crop"
+                    className="w-full h-full object-cover"
+                    style={{
+                      transform: `scale(${zoom})`,
+                      transformOrigin: 'center',
+                    }}
+                    onLoad={() => {
+                      if (imageRef.current) {
+                        const ratio = imageRef.current.offsetWidth / imageRef.current.naturalWidth
+                        setZoom(1 / ratio)
+                      }
+                    }}
+                  />
+                </div>
+                <input
+                  type="range"
+                  min="1"
+                  max="3"
+                  step="0.1"
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="w-full mt-4"
+                />
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={saveCroppedImage}
+                    className="flex-1 bg-forest text-white py-2 rounded-lg hover:opacity-90 transition"
+                  >
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setCropMode(false)
+                      setAvatarPreview('')
+                    }}
+                    className="flex-1 bg-gray-400 text-white py-2 rounded-lg hover:bg-gray-300 transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-4xl overflow-hidden shadow-lg">
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    player.name.charAt(0).toUpperCase()
+                  )}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button
+                    onClick={handleImageSearch}
+                    className="flex-1 px-4 py-2 bg-day text-forest rounded-lg hover:bg-gray-200 transition text-sm"
+                  >
+                    🔍 Search
+                  </button>
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="flex-1 px-4 py-2 bg-forest text-white rounded-lg hover:opacity-90 transition text-sm"
+                  >
+                    📤 Upload
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+          />
+          <canvas ref={canvasRef} className="hidden" />
+        </div>
+
+        {/* Stats */}
+        <div className="md:col-span-2 bg-white rounded-xl shadow-lg p-6">
+          <h3 className="font-bold text-night mb-4">Your Stats</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-day p-4 rounded-lg">
+              <p className="text-sm text-gray-600">Level</p>
+              <p className="text-2xl font-bold text-forest">{level}</p>
+            </div>
+            <div className="bg-sunshine/20 p-4 rounded-lg">
+              <p className="text-sm text-gray-600">Total Coins Earned</p>
+              <p className="text-2xl font-bold text-sunshine">{player.total_coins_earned}</p>
+            </div>
+            <div className="bg-day p-4 rounded-lg">
+              <p className="text-sm text-gray-600">Coins to Spend</p>
+              <p className="text-2xl font-bold text-forest">{player.coins}</p>
+            </div>
+            <div className="bg-purple-50 p-4 rounded-lg">
+              <p className="text-sm text-gray-600">Tasks Completed</p>
+              <p className="text-2xl font-bold text-purple-600">{player.tasks_completed || 0}</p>
+            </div>
+          </div>
+
+          {/* Desk items inventory */}
+          {ownedEmojis.length > 0 && (
+            <div className="mt-4 bg-day p-4 rounded-lg">
+              <p className="text-sm text-gray-600 mb-2">Items on your desk ({ownedEmojis.length}/8)</p>
+              <div className="flex gap-3 flex-wrap">
+                {ownedEmojis.map((emoji, i) => (
+                  <span key={i} className="text-2xl" title={DESK_ITEMS[emoji]?.name}>{emoji}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Achievements */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <h3 className="font-bold text-night mb-4">Achievements</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { emoji: '📸', title: 'Picture Perfect', unlocked: player.achievements?.includes('Picture Perfect') },
+            { emoji: '🏆', title: 'First Classifier', unlocked: player.achievements?.includes('First Classifier') },
+            { emoji: '🔥', title: 'On Fire', unlocked: player.achievements?.includes('On Fire') },
+            { emoji: '💎', title: 'Whale', unlocked: player.achievements?.includes('Whale') },
+          ].map((achievement, idx) => (
+            <div
+              key={idx}
+              className={`p-4 rounded-lg text-center transition ${
+                achievement.unlocked
+                  ? 'bg-sunshine/20 border-2 border-sunshine'
+                  : 'bg-gray-100 opacity-50'
+              }`}
+            >
+              <div className="text-3xl mb-2">{achievement.emoji}</div>
+              <p className="text-sm font-semibold text-night">{achievement.title}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
