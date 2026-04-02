@@ -1396,12 +1396,18 @@ function SpeedTyperGame({ onBack, onUpdateCoins, playerAge = 12 }) {
       setStreak(0)
     }
 
-    // Adaptive difficulty
+    // Adaptive difficulty - progress after every 2 completed rounds, regress only on very slow typing
     const wpmThisRound = words / (elapsed / 60)
     let newDiff = difficulty
-    if (wasPerfect && wpmThisRound > 30) {
-      newDiff = Math.min(5, difficulty + 1)
-    } else if (!wasPerfect || wpmThisRound < 15) {
+    // Check accuracy: how close was the input to the sentence?
+    const accuracy = input.trim().length / Math.max(1, sentence.trim().length)
+    if (accuracy > 0.8 && wpmThisRound > 15) {
+      // Good enough effort - increase difficulty every 2 rounds
+      if ((completedRounds + 1) % 2 === 0) {
+        newDiff = Math.min(5, difficulty + 1)
+      }
+    } else if (wpmThisRound < 10) {
+      // Only drop if really struggling
       newDiff = Math.max(1, difficulty - 1)
     }
     setDifficulty(newDiff)
