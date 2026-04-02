@@ -1681,8 +1681,8 @@ function WordScrambleGame({ onBack, onUpdateCoins }) {
           Round {round}/7 - Correct: {correct}
         </p>
 
-        <div className="bg-gradient-to-br from-forest/20 to-forest/10 p-6 rounded-lg mb-6 text-center">
-          <p className="text-4xl font-bold text-emerald-100 tracking-widest">{currentWord}</p>
+        <div className="bg-night p-6 rounded-lg mb-6 text-center">
+          <p className="text-4xl font-bold text-sunshine tracking-widest">{currentWord}</p>
         </div>
 
         <input
