@@ -177,30 +177,30 @@ function TopBar({ player, coinAnimation, onSignOut }) {
 
   return (
     <div className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <img src="https://a.storyblok.com/f/286772795909088/1172x1172/8547317449/fi-icon.png" alt="Forward Institute" className="h-10 w-10" />
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-lg shrink-0">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 sm:py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+          <img src="https://a.storyblok.com/f/286772795909088/1172x1172/8547317449/fi-icon.png" alt="Forward Institute" className="h-8 w-8 sm:h-10 sm:w-10 shrink-0" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-sm sm:text-lg shrink-0">
             {player.avatar_url ? (
-              <img src={player.avatar_url} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+              <img src={player.avatar_url} alt="Avatar" className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover" />
             ) : (
               player.name.charAt(0).toUpperCase()
             )}
           </div>
-          <div>
-            <h2 className="font-bold text-gray-900">{player.name}</h2>
-            <p className="text-sm text-gray-600">{level}</p>
+          <div className="min-w-0">
+            <h2 className="font-bold text-gray-900 text-sm sm:text-base truncate">{player.name}</h2>
+            <p className="text-xs sm:text-sm text-gray-600">{level}</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-6">
-          <div className={`flex items-center gap-2 ${coinAnimation ? 'animate-coin-bounce' : ''}`}>
-            <span className="text-2xl">💰</span>
-            <span className="font-bold text-gray-900 text-lg">{player.coins}</span>
+        <div className="flex items-center gap-2 sm:gap-6 shrink-0">
+          <div className={`flex items-center gap-1 sm:gap-2 ${coinAnimation ? 'animate-coin-bounce' : ''}`}>
+            <span className="text-lg sm:text-2xl">💰</span>
+            <span className="font-bold text-gray-900 text-sm sm:text-lg">{player.coins}</span>
           </div>
           <button
             onClick={onSignOut}
-            className="px-4 py-2 bg-earth/20 text-earth rounded-lg hover:bg-earth/30 transition font-medium"
+            className="px-2 py-1 sm:px-4 sm:py-2 bg-earth/20 text-earth rounded-lg hover:bg-earth/30 transition font-medium text-xs sm:text-base"
           >
             Sign Out
           </button>
@@ -279,17 +279,17 @@ function HubScreen({ player, onNavigate }) {
   ]
 
   return (
-    <div className="max-w-7xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-7xl mx-auto p-3 sm:p-6 animate-fade-in">
       {/* Welcome Banner with Level Progress */}
-      <div className="bg-gradient-to-r from-forest to-forest/80 text-white rounded-xl shadow-lg p-6 mb-8">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Welcome to Forward HQ, {player.name}! 🏢</h1>
-            <p className="text-day/90">Ready to earn coins and climb the ranks?</p>
+      <div className="bg-gradient-to-r from-forest to-forest/80 text-white rounded-xl shadow-lg p-4 sm:p-6 mb-4 sm:mb-8">
+        <div className="flex justify-between items-start mb-3 sm:mb-4 gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2">Welcome, {player.name}! 🏢</h1>
+            <p className="text-day/90 text-sm sm:text-base">Ready to earn coins and climb the ranks?</p>
           </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold">{level}</p>
-            <p className="text-sm text-day/70">Your current rank</p>
+          <div className="text-right shrink-0">
+            <p className="text-lg sm:text-2xl font-bold">{level}</p>
+            <p className="text-xs sm:text-sm text-day/70">Your rank</p>
           </div>
         </div>
         <div className="w-full bg-white/20 rounded-full h-2 mb-2">
@@ -303,70 +303,70 @@ function HubScreen({ player, onNavigate }) {
 
       {/* Room Cards Grouped by Category */}
       <div>
-        <h2 className="text-xl font-bold text-night mb-4">Real Work Rooms</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <h2 className="text-lg sm:text-xl font-bold text-night mb-3 sm:mb-4">Real Work Rooms</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
           {rooms.filter(r => r.category === 'work').map((room) => (
             <button
               key={room.id}
               onClick={() => !room.locked && onNavigate(room.id)}
               disabled={room.locked}
-              className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
+              className={`p-3 sm:p-6 rounded-xl text-white font-bold transition transform hover:scale-105 ${
                 room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
               } bg-gradient-to-br ${room.color}`}
             >
-              <div className="text-5xl mb-3">{room.emoji}</div>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-3">{room.emoji}</div>
               <div className="text-left">
-                <h3 className="font-bold text-lg">{room.title}</h3>
-                <p className="text-sm text-white/80 mt-1">{room.description}</p>
+                <h3 className="font-bold text-sm sm:text-lg">{room.title}</h3>
+                <p className="text-xs sm:text-sm text-white/80 mt-1 hidden sm:block">{room.description}</p>
               </div>
-              {room.earnsCoins && <div className="text-xs mt-3 bg-white/20 px-2 py-1 rounded-full inline-block">💰 Earns coins</div>}
-              {room.locked && <div className="text-sm mt-3">🔒 Age 10+</div>}
+              {room.earnsCoins && <div className="text-xs mt-2 sm:mt-3 bg-white/20 px-2 py-0.5 sm:py-1 rounded-full inline-block">💰 Earns coins</div>}
+              {room.locked && <div className="text-xs sm:text-sm mt-2 sm:mt-3">🔒 Age 10+</div>}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-night mb-4">Fun & Games</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <h2 className="text-lg sm:text-xl font-bold text-night mb-3 sm:mb-4">Fun & Games</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 mb-6 sm:mb-8">
           {rooms.filter(r => r.category === 'fun').map((room) => (
             <button
               key={room.id}
               onClick={() => !room.locked && onNavigate(room.id)}
               disabled={room.locked}
-              className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
+              className={`p-3 sm:p-6 rounded-xl text-white font-bold transition transform hover:scale-105 ${
                 room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
               } bg-gradient-to-br ${room.color}`}
             >
-              <div className="text-5xl mb-3">{room.emoji}</div>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-3">{room.emoji}</div>
               <div className="text-left">
-                <h3 className="font-bold text-lg">{room.title}</h3>
-                <p className="text-sm text-white/80 mt-1">{room.description}</p>
+                <h3 className="font-bold text-sm sm:text-lg">{room.title}</h3>
+                <p className="text-xs sm:text-sm text-white/80 mt-1 hidden sm:block">{room.description}</p>
               </div>
-              {room.locked && <div className="text-sm mt-3">🔒 Age 10+</div>}
+              {room.locked && <div className="text-xs sm:text-sm mt-2 sm:mt-3">🔒 Age 10+</div>}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <h2 className="text-xl font-bold text-night mb-4">Personal</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <h2 className="text-lg sm:text-xl font-bold text-night mb-3 sm:mb-4">Personal</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
           {rooms.filter(r => r.category === 'personal').map((room) => (
             <button
               key={room.id}
               onClick={() => !room.locked && onNavigate(room.id)}
               disabled={room.locked}
-              className={`p-6 rounded-xl text-white font-bold text-xl transition transform hover:scale-105 ${
+              className={`p-3 sm:p-6 rounded-xl text-white font-bold transition transform hover:scale-105 ${
                 room.locked ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-lg'
               } bg-gradient-to-br ${room.color}`}
             >
-              <div className="text-5xl mb-3">{room.emoji}</div>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-3">{room.emoji}</div>
               <div className="text-left">
-                <h3 className="font-bold text-lg">{room.title}</h3>
-                <p className="text-sm text-white/80 mt-1">{room.description}</p>
+                <h3 className="font-bold text-sm sm:text-lg">{room.title}</h3>
+                <p className="text-xs sm:text-sm text-white/80 mt-1 hidden sm:block">{room.description}</p>
               </div>
-              {room.locked && <div className="text-sm mt-3">🔒 Age 10+</div>}
+              {room.locked && <div className="text-xs sm:text-sm mt-2 sm:mt-3">🔒 Age 10+</div>}
             </button>
           ))}
         </div>
@@ -456,21 +456,21 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
   const ownedEmojis = player.desk_items || []
 
   return (
-    <div className="max-w-5xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-5xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
       >
         ← Back to Hub
       </button>
 
       {/* Visual Desk Illustration */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-3xl font-bold text-night">{player.name}'s Desk</h1>
-          <div className="flex items-center gap-2">
-            <span className="text-sm bg-forest text-white px-3 py-1 rounded-full">{level}</span>
-            <span className="text-sm bg-sunshine text-night px-3 py-1 rounded-full">{player.coins} 💰</span>
+      <div className="bg-white rounded-xl shadow-lg p-3 sm:p-6 mb-4 sm:mb-6">
+        <div className="flex items-center justify-between mb-3 sm:mb-4 gap-2">
+          <h1 className="text-xl sm:text-3xl font-bold text-night truncate">{player.name}'s Desk</h1>
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            <span className="text-xs sm:text-sm bg-forest text-white px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">{level}</span>
+            <span className="text-xs sm:text-sm bg-sunshine text-night px-2 sm:px-3 py-0.5 sm:py-1 rounded-full">{player.coins} 💰</span>
           </div>
         </div>
 
@@ -573,9 +573,9 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
       </div>
 
       {/* Profile & Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-4 sm:mb-6">
         {/* Profile Photo */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
           <h3 className="font-bold text-night mb-4">Profile Photo</h3>
           <div className="relative">
             {cropMode ? (
@@ -871,7 +871,7 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
         >
           ← Back to Hub
         </button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <p className="text-lg text-gray-600">No pending contacts to classify.</p>
         </div>
       </div>
@@ -879,35 +879,35 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
       >
         ← Back to Hub
       </button>
 
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Contact Classifier</h1>
-          <div className="flex gap-4 text-sm">
-            <span className="bg-day px-3 py-1 rounded-full font-semibold text-forest">
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4 sm:mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Contact Classifier</h1>
+          <div className="flex gap-2 sm:gap-4 text-xs sm:text-sm flex-wrap">
+            <span className="bg-day px-2 sm:px-3 py-1 rounded-full font-semibold text-forest">
               {currentIndex + 1}/{contacts.length}
             </span>
-            <span className="bg-sunshine/20 px-3 py-1 rounded-full font-semibold text-sunshine">
-              {stats.completed} completed
+            <span className="bg-sunshine/20 px-2 sm:px-3 py-1 rounded-full font-semibold text-sunshine">
+              {stats.completed} done
             </span>
-            <span className="bg-day px-3 py-1 rounded-full font-semibold text-forest">
+            <span className="bg-day px-2 sm:px-3 py-1 rounded-full font-semibold text-forest">
               Streak: {stats.streak}
             </span>
           </div>
         </div>
 
         {currentContact && (
-          <div className="space-y-6">
-            <div className="bg-day p-6 rounded-lg border-l-4 border-earth">
-              <h2 className="text-2xl font-bold text-night mb-4">{currentContact.title}</h2>
-              <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-day p-4 sm:p-6 rounded-lg border-l-4 border-earth">
+              <h2 className="text-lg sm:text-2xl font-bold text-night mb-3 sm:mb-4">{currentContact.title}</h2>
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
                 <div>
                   <p className="text-gray-600">Organization</p>
                   <p className="font-semibold text-gray-900">{currentContact.org_name || '-'}</p>
@@ -935,7 +935,7 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">Contact Type</label>
                 <select
@@ -968,22 +968,22 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
               </div>
             </div>
 
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
               {!suggestion && (
                 <button
                   onClick={getAISuggestion}
                   disabled={loadingSuggestion}
-                  className="flex-1 bg-sky text-white py-3 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
+                  className="flex-1 bg-sky text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:opacity-90 disabled:opacity-50 transition"
                 >
-                  {loadingSuggestion ? 'Thinking... 🤔' : 'Get AI Suggestion 💡'}
+                  {loadingSuggestion ? 'Thinking... 🤔' : 'AI Suggestion 💡'}
                 </button>
               )}
               <button
                 onClick={submitClassification}
                 disabled={!selectedType || !selectedRel}
-                className="flex-1 bg-forest text-white py-3 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
+                className="flex-1 bg-forest text-white py-2.5 sm:py-3 rounded-lg font-bold text-sm sm:text-base hover:opacity-90 disabled:opacity-50 transition"
               >
-                Submit Classification ✓
+                Submit ✓
               </button>
               <button
                 onClick={skipContact}
@@ -1098,15 +1098,15 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
 
   if (!currentOrg) {
     return (
-      <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+      <div className="max-w-4xl mx-auto p-3 sm:p-6 animate-fade-in">
         <button
           onClick={() => onNavigate('hub')}
-          className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+          className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
         >
           ← Back to Hub
         </button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <p className="text-lg text-gray-600">All logos found! Great work!</p>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
+          <p className="text-base sm:text-lg text-gray-600">All logos found! Great work!</p>
         </div>
       </div>
     )
@@ -1115,10 +1115,10 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
   const progress = organisations.length > 0 ? Math.round(((currentIndex + 1) / organisations.length) * 100) : 0
 
   return (
-    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
       >
         ← Back to Hub
       </button>
@@ -1136,10 +1136,10 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">Find This Logo</h1>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4 sm:mb-8">Find This Logo</h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
           <div>
             <h3 className="font-bold text-gray-900 mb-4">Org Details</h3>
             <div className="space-y-4">
@@ -1260,10 +1260,10 @@ function ArcadeScreen({ player, onNavigate, onUpdateCoins }) {
   const [game, setGame] = useState(null)
 
   return (
-    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
       >
         ← Back to Hub
       </button>
@@ -1275,22 +1275,22 @@ function ArcadeScreen({ player, onNavigate, onUpdateCoins }) {
             <p className="text-gray-600">Play games and earn coins!</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6">
             <button
               onClick={() => setGame('speedtyper')}
-              className="bg-gradient-to-br from-sky to-sky/80 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+              className="bg-gradient-to-br from-sky to-sky/80 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <div className="text-5xl mb-4">⌨️</div>
-              <h3 className="text-2xl font-bold mb-2">Speed Typer</h3>
-              <p className="text-sky/90">Type sentences as fast as you can!</p>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">⌨️</div>
+              <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Speed Typer</h3>
+              <p className="text-sky/90 text-xs sm:text-base hidden sm:block">Type sentences as fast as you can!</p>
             </button>
             <button
               onClick={() => setGame('memory')}
-              className="bg-gradient-to-br from-pink-400 to-pink-500 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+              className="bg-gradient-to-br from-pink-400 to-pink-500 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <div className="text-5xl mb-4">🧠</div>
-              <h3 className="text-2xl font-bold mb-2">Memory Match</h3>
-              <p className="text-pink-100">Test your memory with emoji pairs!</p>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">🧠</div>
+              <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Memory Match</h3>
+              <p className="text-pink-100 text-xs sm:text-base hidden sm:block">Test your memory with emoji pairs!</p>
             </button>
           </div>
         </div>
@@ -1481,7 +1481,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins, playerAge = 12 }) {
         >
           ← Back
         </button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="text-6xl mb-4">⌨️</div>
           <h2 className="text-3xl font-bold text-night mb-4">Time's Up!</h2>
           <div className="grid grid-cols-2 gap-4 mb-6">
@@ -1521,13 +1521,13 @@ function SpeedTyperGame({ onBack, onUpdateCoins, playerAge = 12 }) {
       >
         ← Back
       </button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-night">Speed Typer</h1>
-          <div className="flex gap-4 text-sm">
-            <span className="bg-day px-3 py-1 rounded-full">Round {round + 1}</span>
-            <span className="bg-day px-3 py-1 rounded-full">Level {difficulty}/5</span>
-            <span className={`px-3 py-1 rounded-full font-bold ${timeLeft <= 10 ? 'bg-earth text-white' : 'bg-forest text-white'}`}>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-2xl font-bold text-night">Speed Typer</h1>
+          <div className="flex gap-1.5 sm:gap-4 text-xs sm:text-sm">
+            <span className="bg-day px-2 sm:px-3 py-1 rounded-full">Round {round + 1}</span>
+            <span className="bg-day px-2 sm:px-3 py-1 rounded-full">Level {difficulty}/5</span>
+            <span className={`px-2 sm:px-3 py-1 rounded-full font-bold ${timeLeft <= 10 ? 'bg-earth text-white' : 'bg-forest text-white'}`}>
               {timeLeft}s
             </span>
           </div>
@@ -1550,7 +1550,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins, playerAge = 12 }) {
                 Perfect! ✨ Next sentence coming...
               </div>
             )}
-            <div className="bg-day p-6 rounded-lg mb-6 min-h-24 flex items-center justify-center">
+            <div className="bg-day p-3 sm:p-6 rounded-lg mb-4 sm:mb-6 min-h-16 sm:min-h-24 flex items-center justify-center">
               {renderSentence()}
             </div>
 
@@ -1562,7 +1562,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins, playerAge = 12 }) {
               onKeyDown={handleKeyDown}
               autoFocus
               disabled={perfectRound}
-              className="w-full p-4 border-2 border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest text-lg mb-3"
+              className="w-full p-3 sm:p-4 border-2 border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest text-base sm:text-lg mb-2 sm:mb-3"
               placeholder="Start typing... (press Enter when done)"
             />
 
@@ -1646,7 +1646,7 @@ function MemoryGame({ onBack, onUpdateCoins, playerAge = 12 }) {
         >
           ← Back
         </button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="text-6xl mb-4">🧠</div>
           <h2 className="text-3xl font-bold text-night mb-4">Perfect!</h2>
           <p className="text-2xl font-bold text-forest mb-2">{moves} moves</p>
@@ -1670,18 +1670,18 @@ function MemoryGame({ onBack, onUpdateCoins, playerAge = 12 }) {
       >
         ← Back
       </button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-night">Memory Match: {theme.name}</h1>
-          <span className="bg-day px-3 py-1 rounded-full font-semibold text-forest">Moves: {moves}</span>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <h1 className="text-lg sm:text-2xl font-bold text-night">Memory Match: {theme.name}</h1>
+          <span className="bg-day px-2 sm:px-3 py-1 rounded-full font-semibold text-forest text-xs sm:text-sm">Moves: {moves}</span>
         </div>
 
-        <div className="grid grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-3 mb-4 sm:mb-6">
           {deck.map((emoji, i) => (
             <button
               key={i}
               onClick={() => handleClick(i)}
-              className={`aspect-square text-4xl rounded-lg transition transform hover:scale-110 ${
+              className={`aspect-square text-2xl sm:text-4xl rounded-lg transition transform hover:scale-110 ${
                 matched.has(i)
                   ? 'bg-sky/30 cursor-default'
                   : flipped.has(i)
@@ -1707,10 +1707,10 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
   const [game, setGame] = useState(null)
 
   return (
-    <div className="max-w-4xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-4xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+        className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition text-sm sm:text-base"
       >
         ← Back to Hub
       </button>
@@ -1722,30 +1722,30 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
             <p className="text-gray-600">Relax with word games and puzzles!</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
             <button
               onClick={() => setGame('scramble')}
-              className="bg-gradient-to-br from-purple-400 to-purple-500 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+              className="bg-gradient-to-br from-purple-400 to-purple-500 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <div className="text-5xl mb-4">🔤</div>
-              <h3 className="text-2xl font-bold mb-2">Word Scramble</h3>
-              <p className="text-purple-100">Unscramble business words!</p>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">🔤</div>
+              <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Word Scramble</h3>
+              <p className="text-purple-100 text-xs sm:text-base hidden sm:block">Unscramble business words!</p>
             </button>
             <button
               onClick={() => setGame('trivia')}
-              className="bg-gradient-to-br from-sky to-sky/80 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+              className="bg-gradient-to-br from-sky to-sky/80 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
             >
-              <div className="text-5xl mb-4">🧠</div>
-              <h3 className="text-2xl font-bold mb-2">Office Trivia</h3>
-              <p className="text-sky-100">Test your knowledge!</p>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">🧠</div>
+              <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Office Trivia</h3>
+              <p className="text-sky-100 text-xs sm:text-base hidden sm:block">Test your knowledge!</p>
             </button>
             <button
               onClick={() => setGame('oddoneout')}
-              className="bg-gradient-to-br from-earth to-earth/80 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+              className="bg-gradient-to-br from-earth to-earth/80 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition col-span-2 md:col-span-1"
             >
-              <div className="text-5xl mb-4">🔍</div>
-              <h3 className="text-2xl font-bold mb-2">Odd One Out</h3>
-              <p className="text-orange-100">Spot the one that doesn't belong!</p>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">🔍</div>
+              <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Odd One Out</h3>
+              <p className="text-orange-100 text-xs sm:text-base hidden sm:block">Spot the one that doesn't belong!</p>
             </button>
           </div>
         </div>
@@ -1852,8 +1852,8 @@ function WordScrambleGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="animate-pulse text-2xl mb-4">🔤</div>
           <p className="text-gray-600">AI is picking words ({difficulty} mode)...</p>
         </div>
@@ -1867,8 +1867,8 @@ function WordScrambleGame({ onBack, onUpdateCoins, playerAge = 12 }) {
     const totalCoins = Math.round(correct * baseCoins * ageBonus)
     return (
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="text-6xl mb-4">{correct >= 5 ? '🏆' : correct >= 3 ? '👏' : '💪'}</div>
           <h2 className="text-3xl font-bold text-night mb-2">Complete!</h2>
           <p className="text-4xl font-bold text-forest mb-1">{correct}/{words.length}</p>
@@ -1885,8 +1885,8 @@ function WordScrambleGame({ onBack, onUpdateCoins, playerAge = 12 }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
+      <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-night">Word Scramble</h1>
           <div className="flex gap-3 text-sm">
@@ -1953,7 +1953,7 @@ function BoardroomScreen({ player, onNavigate }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-6xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -1970,11 +1970,11 @@ function BoardroomScreen({ player, onNavigate }) {
           <table className="w-full">
             <thead className="bg-day border-b">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Rank</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Player</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Level</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">💰 Coins</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-700">Tasks</th>
+                <th className="px-2 sm:px-6 py-2 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">#</th>
+                <th className="px-2 sm:px-6 py-2 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Player</th>
+                <th className="px-2 sm:px-6 py-2 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">Level</th>
+                <th className="px-2 sm:px-6 py-2 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700">💰</th>
+                <th className="px-2 sm:px-6 py-2 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-700 hidden sm:table-cell">Tasks</th>
               </tr>
             </thead>
             <tbody>
@@ -1988,25 +1988,25 @@ function BoardroomScreen({ player, onNavigate }) {
                       isCurrentPlayer ? 'bg-yellow-50 font-bold' : 'hover:bg-day'
                     }`}
                   >
-                    <td className="px-6 py-4 text-sm text-gray-900">
+                    <td className="px-2 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm text-gray-900">
                       {idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : idx + 1}
                     </td>
-                    <td className="px-6 py-4 text-sm">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-xs">
+                    <td className="px-2 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-br from-forest to-forest/80 flex items-center justify-center text-white font-bold text-xs shrink-0">
                           {p.avatar_url ? (
-                            <img src={p.avatar_url} alt="Avatar" className="w-8 h-8 rounded-full object-cover" />
+                            <img src={p.avatar_url} alt="Avatar" className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover" />
                           ) : (
                             p.name.charAt(0).toUpperCase()
                           )}
                         </div>
-                        <span className="text-gray-900">{p.name}</span>
-                        {isCurrentPlayer && <span className="ml-2">👈 You</span>}
+                        <span className="text-gray-900 truncate">{p.name}</span>
+                        {isCurrentPlayer && <span className="ml-1 text-xs">👈</span>}
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{level}</td>
-                    <td className="px-6 py-4 text-sm font-semibold text-sunshine">{p.total_coins_earned}</td>
-                    <td className="px-6 py-4 text-sm text-gray-700">{p.tasks_completed || 0}</td>
+                    <td className="px-2 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm text-gray-700">{level}</td>
+                    <td className="px-2 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm font-semibold text-sunshine">{p.total_coins_earned}</td>
+                    <td className="px-2 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">{p.tasks_completed || 0}</td>
                   </tr>
                 )
               })}
@@ -2081,8 +2081,8 @@ function TriviaGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="animate-pulse text-4xl mb-4">🧠</div>
           <p className="text-gray-600">AI is creating trivia questions...</p>
         </div>
@@ -2093,8 +2093,8 @@ function TriviaGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   if (gameOver) {
     return (
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="text-6xl mb-4">{score >= 5 ? '🏆' : score >= 3 ? '🌟' : '💪'}</div>
           <h2 className="text-3xl font-bold text-night mb-2">Trivia Complete!</h2>
           <p className="text-xl text-gray-600 mb-2">{score} / {questions.length} correct</p>
@@ -2110,8 +2110,8 @@ function TriviaGame({ onBack, onUpdateCoins, playerAge = 12 }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
+      <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
         <div className="flex justify-between items-center mb-6">
           <span className="text-sm font-semibold text-forest bg-day px-3 py-1 rounded-full">Question {current + 1}/{questions.length}</span>
           <span className="text-sm font-semibold text-sunshine bg-sunshine/20 px-3 py-1 rounded-full">Score: {score}</span>
@@ -2217,8 +2217,8 @@ function OddOneOutGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="animate-pulse text-4xl mb-4">🔍</div>
           <p className="text-gray-600">AI is creating puzzles...</p>
         </div>
@@ -2229,8 +2229,8 @@ function OddOneOutGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   if (gameOver) {
     return (
       <div className="max-w-2xl mx-auto">
-        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
           <div className="text-6xl mb-4">{score >= 5 ? '🏆' : score >= 3 ? '🌟' : '💪'}</div>
           <h2 className="text-3xl font-bold text-night mb-2">Odd One Out Complete!</h2>
           <p className="text-xl text-gray-600 mb-2">{score} / {sets.length} correct</p>
@@ -2246,8 +2246,8 @@ function OddOneOutGame({ onBack, onUpdateCoins, playerAge = 12 }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
-      <div className="bg-white rounded-xl shadow-lg p-8">
+      <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
         <div className="flex justify-between items-center mb-6">
           <span className="text-sm font-semibold text-forest bg-day px-3 py-1 rounded-full">Puzzle {current + 1}/{sets.length}</span>
           <span className="text-sm font-semibold text-sunshine bg-sunshine/20 px-3 py-1 rounded-full">Score: {score}</span>
@@ -2331,7 +2331,7 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 animate-fade-in">
+    <div className="max-w-6xl mx-auto p-3 sm:p-6 animate-fade-in">
       <button
         onClick={() => onNavigate('hub')}
         className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
@@ -2339,18 +2339,18 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
         ← Back to Hub
       </button>
 
-      <div className="mb-6 flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">🛍️ The Shop</h1>
-          <p className="text-gray-600">Spend your coins on cool desk items!</p>
+      <div className="mb-4 sm:mb-6 flex justify-between items-center gap-2">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">🛍️ The Shop</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Spend your coins on desk items!</p>
         </div>
-        <div className="bg-day px-6 py-3 rounded-lg">
-          <p className="text-sm text-gray-600">Your Balance</p>
-          <p className="text-2xl font-bold text-forest">{player.coins} 💰</p>
+        <div className="bg-day px-3 sm:px-6 py-2 sm:py-3 rounded-lg shrink-0">
+          <p className="text-xs sm:text-sm text-gray-600">Balance</p>
+          <p className="text-lg sm:text-2xl font-bold text-forest">{player.coins} 💰</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
         {items.map((item) => {
           const owned = player.desk_items?.includes(item.emoji)
           const canAfford = player.coins >= item.price
@@ -2358,11 +2358,11 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
           return (
             <div
               key={item.id}
-              className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition"
+              className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transition"
             >
-              <div className="text-5xl mb-4">{item.emoji}</div>
-              <h3 className="font-bold text-gray-900 mb-2">{item.name}</h3>
-              <p className="text-2xl font-bold text-sunshine mb-4">{item.price} 💰</p>
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">{item.emoji}</div>
+              <h3 className="font-bold text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">{item.name}</h3>
+              <p className="text-lg sm:text-2xl font-bold text-sunshine mb-2 sm:mb-4">{item.price} 💰</p>
 
               <button
                 onClick={() => handleBuy(item)}
