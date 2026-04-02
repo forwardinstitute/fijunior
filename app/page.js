@@ -231,7 +231,7 @@ function HubScreen({ player, onNavigate }) {
       emoji: '👥',
       color: 'from-earth to-earth/80',
       description: 'Classify business contacts by type and relationship',
-      locked: player.age < 12,
+      locked: player.age < 10,
       category: 'work',
       earnsCoins: true
     },
@@ -320,7 +320,7 @@ function HubScreen({ player, onNavigate }) {
                 <p className="text-sm text-white/80 mt-1">{room.description}</p>
               </div>
               {room.earnsCoins && <div className="text-xs mt-3 bg-white/20 px-2 py-1 rounded-full inline-block">💰 Earns coins</div>}
-              {room.locked && <div className="text-sm mt-3">🔒 Age 12+</div>}
+              {room.locked && <div className="text-sm mt-3">🔒 Age 10+</div>}
             </button>
           ))}
         </div>
@@ -343,7 +343,7 @@ function HubScreen({ player, onNavigate }) {
                 <h3 className="font-bold text-lg">{room.title}</h3>
                 <p className="text-sm text-white/80 mt-1">{room.description}</p>
               </div>
-              {room.locked && <div className="text-sm mt-3">🔒 Age 12+</div>}
+              {room.locked && <div className="text-sm mt-3">🔒 Age 10+</div>}
             </button>
           ))}
         </div>
@@ -366,7 +366,7 @@ function HubScreen({ player, onNavigate }) {
                 <h3 className="font-bold text-lg">{room.title}</h3>
                 <p className="text-sm text-white/80 mt-1">{room.description}</p>
               </div>
-              {room.locked && <div className="text-sm mt-3">🔒 Age 12+</div>}
+              {room.locked && <div className="text-sm mt-3">🔒 Age 10+</div>}
             </button>
           ))}
         </div>
@@ -736,8 +736,19 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
   const [selectedRel, setSelectedRel] = useState('')
   const [stats, setStats] = useState({ completed: 0, streak: 0, coinsThisSession: 0 })
 
-  const CONTACT_TYPES = ['Person', 'Organisation', 'Government', 'Charity']
-  const RELATIONSHIPS = ['Executive', 'Manager', 'Employee', 'Founder', 'Investor', 'Partner', 'Other']
+  // Dependent picklist from Salesforce - Relationship options depend on Contact Type
+  const DEPENDENT_PICKLIST = {
+    'Organisation': [
+      'Board Member', 'Budget Holder', 'Chief Executive Officer', 'Decision Maker',
+      'Founder', 'Line Manager', 'Organisation', 'Other', 'Senior Leader', 'Stakeholder',
+    ],
+    'Human Resources': [
+      'Head of Leadership', 'Head of Learning', 'Head of People', 'Head of Talent',
+      'HR Contact', 'Key HR', 'Line Manager', 'Senior HR',
+    ],
+  }
+  const CONTACT_TYPES = Object.keys(DEPENDENT_PICKLIST)
+  const RELATIONSHIPS = selectedType ? (DEPENDENT_PICKLIST[selectedType] || []) : []
 
   useEffect(() => {
     loadContacts()
@@ -929,7 +940,7 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
                 <label className="block text-sm font-semibold text-gray-900 mb-2">Contact Type</label>
                 <select
                   value={selectedType}
-                  onChange={(e) => setSelectedType(e.target.value)}
+                  onChange={(e) => { setSelectedType(e.target.value); setSelectedRel('') }}
                   className="w-full p-3 border border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
                 >
                   <option value="">Select type...</option>
@@ -947,7 +958,7 @@ function ClassifierScreen({ player, onNavigate, onUpdateCoins }) {
                   onChange={(e) => setSelectedRel(e.target.value)}
                   className="w-full p-3 border border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest"
                 >
-                  <option value="">Select relationship...</option>
+                  <option value="">{selectedType ? 'Select relationship...' : 'Pick a contact type first...'}</option>
                   {RELATIONSHIPS.map((rel) => (
                     <option key={rel} value={rel}>
                       {rel}
@@ -1284,16 +1295,17 @@ function ArcadeScreen({ player, onNavigate, onUpdateCoins }) {
           </div>
         </div>
       ) : game === 'speedtyper' ? (
-        <SpeedTyperGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
+        <SpeedTyperGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
       ) : game === 'memory' ? (
-        <MemoryGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
+        <MemoryGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
       ) : null}
     </div>
   )
 }
 
 // Speed Typer Game
-function SpeedTyperGame({ onBack, onUpdateCoins }) {
+function SpeedTyperGame({ onBack, onUpdateCoins, playerAge = 12 }) {
+  const startingDifficulty = playerAge >= 13 ? 3 : playerAge >= 10 ? 2 : 1
   const FALLBACK_SENTENCES = [
     ['Hello and welcome to our team.', 'We work together every day.', 'The office is a busy place.'],
     ['Good leaders listen to their teams.', 'Working together helps everyone succeed.', 'The best ideas come from teamwork.'],
@@ -1307,7 +1319,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
   const [timeLeft, setTimeLeft] = useState(60)
   const [gameOver, setGameOver] = useState(false)
   const [round, setRound] = useState(0)
-  const [difficulty, setDifficulty] = useState(1)
+  const [difficulty, setDifficulty] = useState(startingDifficulty)
   const [totalWords, setTotalWords] = useState(0)
   const [totalTime, setTotalTime] = useState(0)
   const [roundStart, setRoundStart] = useState(null)
@@ -1349,7 +1361,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
   useEffect(() => {
     if (!fetchedRef.current) {
       fetchedRef.current = true
-      fetchSentence(1)
+      fetchSentence(startingDifficulty)
     }
   }, [])
 
@@ -1418,7 +1430,9 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
 
   // Calculate final stats
   const finalWPM = totalTime > 0 ? Math.round(totalWords / (totalTime / 60)) : 0
-  const totalCoins = Math.min(30, Math.max(5, completedRounds * 3 + Math.round(finalWPM / 10)))
+  // Younger players get a small coin boost to keep things fun
+  const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.2 : 1.4
+  const totalCoins = Math.round(Math.min(40, Math.max(5, (completedRounds * 3 + Math.round(finalWPM / 10)) * ageBonus)))
 
   // Render character-by-character comparison
   const renderSentence = () => {
@@ -1558,7 +1572,7 @@ function SpeedTyperGame({ onBack, onUpdateCoins }) {
 }
 
 // Memory Match Game
-function MemoryGame({ onBack, onUpdateCoins }) {
+function MemoryGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   const THEMES = [
     { name: 'Office Life', emojis: ['🏢', '💼', '📊', '👔', '🎯', '📈', '💰', '🏆'] },
     { name: 'Nature', emojis: ['🌳', '🌻', '🦋', '🌈', '🍄', '🐝', '🌸', '🦊'] },
@@ -1606,7 +1620,8 @@ function MemoryGame({ onBack, onUpdateCoins }) {
 
         if (newMatched.size === deck.length) {
           // Game won, pay coins
-          onUpdateCoins(Math.max(10, 50 - moves))
+          const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.2 : 1.4
+          onUpdateCoins(Math.round(Math.max(10, 50 - moves) * ageBonus))
         }
       } else {
         setTimeout(() => setFlipped(new Set()), 600)
@@ -1701,7 +1716,7 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
             <p className="text-gray-600">Relax with word games and puzzles!</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <button
               onClick={() => setGame('scramble')}
               className="bg-gradient-to-br from-purple-400 to-purple-500 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
@@ -1710,66 +1725,151 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
               <h3 className="text-2xl font-bold mb-2">Word Scramble</h3>
               <p className="text-purple-100">Unscramble business words!</p>
             </button>
+            <button
+              onClick={() => setGame('trivia')}
+              className="bg-gradient-to-br from-sky to-sky/80 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <div className="text-5xl mb-4">🧠</div>
+              <h3 className="text-2xl font-bold mb-2">Office Trivia</h3>
+              <p className="text-sky-100">Test your knowledge!</p>
+            </button>
+            <button
+              onClick={() => setGame('oddoneout')}
+              className="bg-gradient-to-br from-earth to-earth/80 text-white p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <div className="text-5xl mb-4">🔍</div>
+              <h3 className="text-2xl font-bold mb-2">Odd One Out</h3>
+              <p className="text-orange-100">Spot the one that doesn't belong!</p>
+            </button>
           </div>
         </div>
       ) : game === 'scramble' ? (
-        <WordScrambleGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} />
+        <WordScrambleGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
+      ) : game === 'trivia' ? (
+        <TriviaGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
+      ) : game === 'oddoneout' ? (
+        <OddOneOutGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
       ) : null}
     </div>
   )
 }
 
 // Word Scramble Game
-function WordScrambleGame({ onBack, onUpdateCoins }) {
-  const words = ['MANAGER', 'OFFICE', 'MEETING', 'PROJECT', 'BUSINESS', 'EMPLOYEE', 'COMPANY']
+function WordScrambleGame({ onBack, onUpdateCoins, playerAge = 12 }) {
+  const difficulty = playerAge >= 13 ? 'hard' : playerAge >= 10 ? 'medium' : 'easy'
+
+  const FALLBACK_WORDS = {
+    easy: ['TEAM', 'PLAN', 'LEAD', 'GOAL', 'WORK', 'IDEA', 'GROW'],
+    medium: ['LEADER', 'OFFICE', 'GROWTH', 'CHANGE', 'VALUES', 'IMPACT', 'VISION'],
+    hard: ['STRATEGY', 'TEAMWORK', 'PROGRESS', 'BUSINESS', 'CREATIVE', 'AMBITION', 'DECISION'],
+  }
+
+  const [words, setWords] = useState([])
   const [round, setRound] = useState(1)
   const [currentWord, setCurrentWord] = useState('')
   const [input, setInput] = useState('')
   const [correct, setCorrect] = useState(0)
+  const [loading, setLoading] = useState(true)
+  const [answered, setAnswered] = useState(null)
+  const [showAnswer, setShowAnswer] = useState(false)
 
-  // Generate scrambled word that doesn't match the original
   const generateScrambledWord = (word) => {
+    if (!word || word.length <= 1) return word
     let scrambled
+    let attempts = 0
     do {
       scrambled = word.split('').sort(() => Math.random() - 0.5).join('')
-    } while (scrambled === word)
+      attempts++
+    } while (scrambled === word && attempts < 20)
     return scrambled
   }
 
-  // Update current word whenever round changes
   useEffect(() => {
-    setCurrentWord(generateScrambledWord(words[round - 1]))
-  }, [round])
+    fetchWords()
+  }, [])
+
+  const fetchWords = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/word-scramble', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 7, difficulty }),
+      })
+      const data = await res.json()
+      if (data.words?.length) {
+        setWords(data.words)
+        setCurrentWord(generateScrambledWord(data.words[0]))
+      } else {
+        throw new Error('No words')
+      }
+    } catch {
+      const fallback = FALLBACK_WORDS[difficulty] || FALLBACK_WORDS.medium
+      setWords(fallback)
+      setCurrentWord(generateScrambledWord(fallback[0]))
+    }
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    if (words.length > 0 && round <= words.length) {
+      setCurrentWord(generateScrambledWord(words[round - 1]))
+    }
+  }, [round, words])
 
   const handleSubmit = () => {
-    if (input.toUpperCase() === words[round - 1]) {
+    if (answered !== null || !words[round - 1]) return
+    const isCorrect = input.toUpperCase().trim() === words[round - 1]
+    setAnswered(isCorrect)
+    setShowAnswer(true)
+
+    if (isCorrect) {
       setCorrect(correct + 1)
-      onUpdateCoins(3)
+      // Base coins by difficulty, with age bonus for younger players
+      const baseCoins = difficulty === 'hard' ? 8 : difficulty === 'medium' ? 5 : 3
+      const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.3 : 1.5
+      onUpdateCoins(Math.round(baseCoins * ageBonus))
     }
 
-    if (round < words.length) {
-      setRound(round + 1)
+    setTimeout(() => {
+      setAnswered(null)
+      setShowAnswer(false)
       setInput('')
-    }
+      if (round < words.length) {
+        setRound(round + 1)
+      } else {
+        setRound(round + 1) // triggers finished state
+      }
+    }, 1800)
+  }
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-pulse text-2xl mb-4">🔤</div>
+          <p className="text-gray-600">AI is picking words ({difficulty} mode)...</p>
+        </div>
+      </div>
+    )
   }
 
   if (round > words.length) {
+    const baseCoins = difficulty === 'hard' ? 8 : difficulty === 'medium' ? 5 : 3
+    const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.3 : 1.5
+    const totalCoins = Math.round(correct * baseCoins * ageBonus)
     return (
       <div className="max-w-2xl mx-auto">
-        <button
-          onClick={onBack}
-          className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-        >
-          ← Back
-        </button>
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
         <div className="bg-white rounded-xl shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">🔤</div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">Complete!</h2>
-          <p className="text-2xl font-bold text-forest mb-2">{correct}/7 Correct</p>
-          <button
-            onClick={onBack}
-            className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition"
-          >
+          <div className="text-6xl mb-4">{correct >= 5 ? '🏆' : correct >= 3 ? '👏' : '💪'}</div>
+          <h2 className="text-3xl font-bold text-night mb-2">Complete!</h2>
+          <p className="text-4xl font-bold text-forest mb-1">{correct}/{words.length}</p>
+          <p className="text-gray-600 mb-2">correct answers</p>
+          <p className="text-sm text-gray-500 mb-2">Difficulty: {difficulty}</p>
+          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
+          <button onClick={onBack} className="bg-forest text-white px-8 py-3 rounded-lg font-bold hover:opacity-90 transition">
             Back to Break Room
           </button>
         </div>
@@ -1779,21 +1879,27 @@ function WordScrambleGame({ onBack, onUpdateCoins }) {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <button
-        onClick={onBack}
-        className="mb-6 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-      >
-        ← Back
-      </button>
+      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
       <div className="bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">Word Scramble</h1>
-        <p className="text-gray-600 mb-6">
-          Round {round}/7 - Correct: {correct}
-        </p>
-
-        <div className="bg-night p-6 rounded-lg mb-6 text-center">
-          <p className="text-4xl font-bold text-sunshine tracking-widest">{currentWord}</p>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-2xl font-bold text-night">Word Scramble</h1>
+          <div className="flex gap-3 text-sm">
+            <span className="bg-day px-3 py-1 rounded-full">Round {round}/{words.length}</span>
+            <span className="bg-forest text-white px-3 py-1 rounded-full">{correct} correct</span>
+          </div>
         </div>
+
+        <div className="bg-night p-8 rounded-xl mb-6 text-center">
+          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wider">Unscramble this word</p>
+          <p className="text-4xl font-bold text-sunshine tracking-widest font-mono">{currentWord}</p>
+          <p className="text-xs text-gray-500 mt-2">{words[round - 1]?.length} letters</p>
+        </div>
+
+        {showAnswer && (
+          <div className={`mb-4 p-3 rounded-lg text-center font-bold ${answered ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+            {answered ? 'Correct! ✨' : `Not quite - it was ${words[round - 1]}`}
+          </div>
+        )}
 
         <input
           type="text"
@@ -1801,13 +1907,15 @@ function WordScrambleGame({ onBack, onUpdateCoins }) {
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           autoFocus
-          className="w-full p-4 border-2 border-forest rounded-lg focus:outline-none focus:ring-2 focus:ring-forest mb-4 text-lg"
+          disabled={answered !== null}
+          className="w-full p-4 border-2 border-forest/30 rounded-lg focus:outline-none focus:ring-2 focus:ring-forest mb-4 text-lg uppercase tracking-wider"
           placeholder="Type the answer..."
         />
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-forest text-white py-3 rounded-lg font-bold hover:opacity-90 transition"
+          disabled={answered !== null || !input.trim()}
+          className="w-full bg-forest text-white py-3 rounded-lg font-bold hover:opacity-90 disabled:opacity-50 transition"
         >
           Submit
         </button>
@@ -1904,18 +2012,307 @@ function BoardroomScreen({ player, onNavigate }) {
   )
 }
 
+// TRIVIA GAME
+function TriviaGame({ onBack, onUpdateCoins, playerAge = 12 }) {
+  const [questions, setQuestions] = useState([])
+  const [current, setCurrent] = useState(0)
+  const [score, setScore] = useState(0)
+  const [selected, setSelected] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [gameOver, setGameOver] = useState(false)
+  const [coinsPaid, setCoinsPaid] = useState(false)
+  const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    fetchQuestions()
+  }, [])
+
+  const fetchQuestions = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/trivia', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 7 }),
+      })
+      const data = await res.json()
+      setQuestions(data.questions || [])
+    } catch (e) {
+      console.error('Failed to fetch trivia:', e)
+    }
+    setLoading(false)
+  }
+
+  const handleAnswer = (index) => {
+    if (selected !== null) return
+    setSelected(index)
+    if (index === questions[current].correct) {
+      setScore(score + 1)
+    }
+  }
+
+  const nextQuestion = () => {
+    if (current + 1 >= questions.length) {
+      setGameOver(true)
+    } else {
+      setCurrent(current + 1)
+      setSelected(null)
+    }
+  }
+
+  const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.2 : 1.4
+  const totalCoins = Math.round(score * 5 * ageBonus)
+
+  useEffect(() => {
+    if (gameOver && !coinsPaid) {
+      setCoinsPaid(true)
+      onUpdateCoins(totalCoins > 0 ? totalCoins : 2)
+    }
+  }, [gameOver])
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-pulse text-4xl mb-4">🧠</div>
+          <p className="text-gray-600">AI is creating trivia questions...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (gameOver) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="text-6xl mb-4">{score >= 5 ? '🏆' : score >= 3 ? '🌟' : '💪'}</div>
+          <h2 className="text-3xl font-bold text-night mb-2">Trivia Complete!</h2>
+          <p className="text-xl text-gray-600 mb-2">{score} / {questions.length} correct</p>
+          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
+          <button onClick={onBack} className="px-6 py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">Back to Break Room</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!questions.length) return null
+  const q = questions[current]
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+      <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex justify-between items-center mb-6">
+          <span className="text-sm font-semibold text-forest bg-day px-3 py-1 rounded-full">Question {current + 1}/{questions.length}</span>
+          <span className="text-sm font-semibold text-sunshine bg-sunshine/20 px-3 py-1 rounded-full">Score: {score}</span>
+        </div>
+
+        <h2 className="text-xl font-bold text-night mb-6">{q.q}</h2>
+
+        <div className="grid grid-cols-1 gap-3 mb-6">
+          {q.options.map((option, i) => {
+            let classes = 'w-full text-left p-4 rounded-lg font-semibold transition border-2 '
+            if (selected === null) {
+              classes += 'border-gray-200 hover:border-forest hover:bg-day cursor-pointer'
+            } else if (i === q.correct) {
+              classes += 'border-green-500 bg-green-50 text-green-800'
+            } else if (i === selected) {
+              classes += 'border-red-400 bg-red-50 text-red-700'
+            } else {
+              classes += 'border-gray-200 opacity-50'
+            }
+            return (
+              <button key={i} onClick={() => handleAnswer(i)} disabled={selected !== null} className={classes}>
+                {option}
+              </button>
+            )
+          })}
+        </div>
+
+        {selected !== null && (
+          <div className="animate-fade-in">
+            {q.funFact && <p className="text-sm text-gray-600 bg-day p-3 rounded-lg mb-4">💡 {q.funFact}</p>}
+            <button onClick={nextQuestion} className="w-full py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">
+              {current + 1 >= questions.length ? 'See Results' : 'Next Question →'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ODD ONE OUT GAME
+function OddOneOutGame({ onBack, onUpdateCoins, playerAge = 12 }) {
+  const [sets, setSets] = useState([])
+  const [current, setCurrent] = useState(0)
+  const [score, setScore] = useState(0)
+  const [selected, setSelected] = useState(null)
+  const [showHint, setShowHint] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [gameOver, setGameOver] = useState(false)
+  const [coinsPaid, setCoinsPaid] = useState(false)
+  const fetchedRef = useRef(false)
+
+  useEffect(() => {
+    if (fetchedRef.current) return
+    fetchedRef.current = true
+    fetchSets()
+  }, [])
+
+  const fetchSets = async () => {
+    setLoading(true)
+    try {
+      const res = await fetch('/api/odd-one-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: 7 }),
+      })
+      const data = await res.json()
+      setSets(data.sets || [])
+    } catch (e) {
+      console.error('Failed to fetch odd one out:', e)
+    }
+    setLoading(false)
+  }
+
+  const handlePick = (item) => {
+    if (selected !== null) return
+    setSelected(item)
+    if (item === sets[current].odd) {
+      setScore(score + 1)
+    }
+  }
+
+  const nextRound = () => {
+    if (current + 1 >= sets.length) {
+      setGameOver(true)
+    } else {
+      setCurrent(current + 1)
+      setSelected(null)
+      setShowHint(false)
+    }
+  }
+
+  const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.2 : 1.4
+  const totalCoins = Math.round(score * 6 * ageBonus)
+
+  useEffect(() => {
+    if (gameOver && !coinsPaid) {
+      setCoinsPaid(true)
+      onUpdateCoins(totalCoins > 0 ? totalCoins : 2)
+    }
+  }, [gameOver])
+
+  if (loading) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="animate-pulse text-4xl mb-4">🔍</div>
+          <p className="text-gray-600">AI is creating puzzles...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (gameOver) {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+          <div className="text-6xl mb-4">{score >= 5 ? '🏆' : score >= 3 ? '🌟' : '💪'}</div>
+          <h2 className="text-3xl font-bold text-night mb-2">Odd One Out Complete!</h2>
+          <p className="text-xl text-gray-600 mb-2">{score} / {sets.length} correct</p>
+          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
+          <button onClick={onBack} className="px-6 py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">Back to Break Room</button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!sets.length) return null
+  const puzzle = sets[current]
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="mb-6 px-4 py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition">← Back</button>
+      <div className="bg-white rounded-xl shadow-lg p-8">
+        <div className="flex justify-between items-center mb-6">
+          <span className="text-sm font-semibold text-forest bg-day px-3 py-1 rounded-full">Puzzle {current + 1}/{sets.length}</span>
+          <span className="text-sm font-semibold text-sunshine bg-sunshine/20 px-3 py-1 rounded-full">Score: {score}</span>
+        </div>
+
+        <h2 className="text-xl font-bold text-night mb-2">Which one doesn't belong?</h2>
+        <p className="text-gray-500 text-sm mb-6">Tap the odd one out</p>
+
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          {puzzle.items.map((item, i) => {
+            let classes = 'p-6 rounded-xl text-center font-bold text-lg transition border-3 cursor-pointer '
+            if (selected === null) {
+              classes += 'border-2 border-gray-200 hover:border-forest hover:bg-day'
+            } else if (item === puzzle.odd) {
+              classes += 'border-2 border-green-500 bg-green-50 text-green-800'
+            } else if (item === selected) {
+              classes += 'border-2 border-red-400 bg-red-50 text-red-700'
+            } else {
+              classes += 'border-2 border-gray-200 opacity-50'
+            }
+            return (
+              <button key={i} onClick={() => handlePick(item)} disabled={selected !== null} className={classes}>
+                {item}
+              </button>
+            )
+          })}
+        </div>
+
+        {selected === null && !showHint && (
+          <button onClick={() => setShowHint(true)} className="text-sm text-sky underline hover:text-sky/80 transition">Need a hint?</button>
+        )}
+
+        {showHint && selected === null && (
+          <p className="text-sm text-sky bg-sky/10 p-3 rounded-lg animate-fade-in">💡 {puzzle.hint}</p>
+        )}
+
+        {selected !== null && (
+          <div className="animate-fade-in">
+            <p className="text-sm text-gray-600 bg-day p-3 rounded-lg mb-4">
+              {selected === puzzle.odd ? '✅ Correct!' : `❌ It was ${puzzle.odd}.`} {puzzle.hint}
+            </p>
+            <button onClick={nextRound} className="w-full py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">
+              {current + 1 >= sets.length ? 'See Results' : 'Next Puzzle →'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // SHOP SCREEN
 function ShopScreen({ player, onNavigate, onUpdateCoins }) {
-  const items = [
-    { id: 'plant', emoji: '🌱', name: 'Plant', price: 50 },
-    { id: 'coffee', emoji: '☕', name: 'Coffee Mug', price: 30 },
-    { id: 'sticker', emoji: '⭐', name: 'Laptop Sticker', price: 20 },
-    { id: 'lamp', emoji: '💡', name: 'Desk Lamp', price: 80 },
-    { id: 'trophy', emoji: '🏆', name: 'Trophy', price: 200 },
-    { id: 'nameplate', emoji: '📛', name: 'Name Plate', price: 100 },
-    { id: 'headphones', emoji: '🎧', name: 'Headphones', price: 150 },
-    { id: 'duck', emoji: '🦆', name: 'Rubber Duck', price: 40 },
+  // Price multiplier based on age - younger kids get cheaper prices so they can afford things faster
+  const priceMultiplier = player.age >= 13 ? 1 : player.age >= 10 ? 0.7 : 0.5
+
+  const baseItems = [
+    { id: 'plant', emoji: '🌱', name: 'Plant', basePrice: 50 },
+    { id: 'coffee', emoji: '☕', name: 'Coffee Mug', basePrice: 30 },
+    { id: 'sticker', emoji: '⭐', name: 'Laptop Sticker', basePrice: 20 },
+    { id: 'lamp', emoji: '💡', name: 'Desk Lamp', basePrice: 80 },
+    { id: 'trophy', emoji: '🏆', name: 'Trophy', basePrice: 200 },
+    { id: 'nameplate', emoji: '📛', name: 'Name Plate', basePrice: 100 },
+    { id: 'headphones', emoji: '🎧', name: 'Headphones', basePrice: 150 },
+    { id: 'duck', emoji: '🦆', name: 'Rubber Duck', basePrice: 40 },
   ]
+
+  const items = baseItems.map(item => ({
+    ...item,
+    price: Math.round(item.basePrice * priceMultiplier),
+  }))
 
   const handleBuy = async (item) => {
     if (player.coins < item.price) return
