@@ -489,6 +489,9 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     '🌍': { top: 4, left: 70 }, '✨': { top: 10, left: 35 }, '🧸': { top: 50, left: 5 },
     '🎨': { top: 15, left: 8 }, '🪴': { top: 52, left: 50 }, '🕰️': { top: 3, left: 60 },
     '🎀': { top: 22, left: 90 }, '🔮': { top: 48, left: 78 },
+    '🚀': { top: 2, left: 30 }, '🐉': { top: 10, left: 50 }, '🌈': { top: 1, left: 5 },
+    '🦄': { top: 45, left: 40 }, '💎': { top: 55, left: 60 }, '👑': { top: 8, left: 42 },
+    '🤖': { top: 50, left: 92 }, '🏰': { top: 3, left: 82 },
   }
   const DESK_ITEM_META = {
     '🌱': { name: 'Plant', size: 'text-3xl sm:text-4xl' },
@@ -511,6 +514,14 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     '🕰️': { name: 'Desk Clock', size: 'text-2xl sm:text-3xl' },
     '🎀': { name: 'Bow', size: 'text-xl sm:text-2xl' },
     '🔮': { name: 'Crystal Ball', size: 'text-2xl sm:text-3xl' },
+    '🚀': { name: 'Rocket Ship', size: 'text-3xl sm:text-4xl' },
+    '🐉': { name: 'Office Dragon', size: 'text-3xl sm:text-5xl' },
+    '🌈': { name: 'Rainbow Machine', size: 'text-3xl sm:text-4xl' },
+    '🦄': { name: 'Desk Unicorn', size: 'text-3xl sm:text-4xl' },
+    '💎': { name: 'Diamond Display', size: 'text-2xl sm:text-3xl' },
+    '👑': { name: 'CEO Crown', size: 'text-2xl sm:text-3xl' },
+    '🤖': { name: 'Office Robot', size: 'text-3xl sm:text-4xl' },
+    '🏰': { name: 'Desk Castle', size: 'text-3xl sm:text-5xl' },
   }
   const ownedEmojis = player.desk_items || []
   const [positions, setPositions] = useState(player.desk_positions || {})
@@ -2814,6 +2825,15 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
     { id: 'discoball', emoji: '🪩', name: 'Disco Ball', basePrice: 350, tier: 'legendary' },
     { id: 'globe', emoji: '🌍', name: 'Globe', basePrice: 400, tier: 'legendary' },
     { id: 'crystalball', emoji: '🔮', name: 'Crystal Ball', basePrice: 500, tier: 'legendary' },
+    // Ultra items - for the absolute ballers
+    { id: 'rocket', emoji: '🚀', name: 'Rocket Ship', basePrice: 750, tier: 'ultra' },
+    { id: 'dragon', emoji: '🐉', name: 'Office Dragon', basePrice: 800, tier: 'ultra' },
+    { id: 'rainbow', emoji: '🌈', name: 'Rainbow Machine', basePrice: 900, tier: 'ultra' },
+    { id: 'unicorn', emoji: '🦄', name: 'Desk Unicorn', basePrice: 1000, tier: 'ultra' },
+    { id: 'diamond', emoji: '💎', name: 'Diamond Display', basePrice: 1200, tier: 'ultra' },
+    { id: 'crown', emoji: '👑', name: 'CEO Crown', basePrice: 1500, tier: 'ultra' },
+    { id: 'robot', emoji: '🤖', name: 'Office Robot', basePrice: 1800, tier: 'ultra' },
+    { id: 'castle', emoji: '🏰', name: 'Desk Castle', basePrice: 2000, tier: 'ultra' },
   ]
 
   const items = baseItems.map(item => ({
@@ -2856,13 +2876,14 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
         { tier: 'mid', label: 'Office Essentials', color: 'text-sky' },
         { tier: 'premium', label: 'Premium', color: 'text-earth' },
         { tier: 'legendary', label: 'Legendary', color: 'text-purple-600' },
+        { tier: 'ultra', label: 'Ultra Rare', color: 'text-amber-500' },
       ].map(({ tier, label, color }) => {
         const tierItems = items.filter(i => i.tier === tier)
         return (
           <div key={tier} className="mb-4 sm:mb-8">
             <h2 className={`text-base sm:text-lg font-bold ${color} mb-2 sm:mb-3`}>
-              {tier === 'legendary' ? '⭐ ' : ''}{label}
-              {tier === 'legendary' ? ' ⭐' : ''}
+              {tier === 'legendary' ? '⭐ ' : tier === 'ultra' ? '🔥 ' : ''}{label}
+              {tier === 'legendary' ? ' ⭐' : tier === 'ultra' ? ' 🔥' : ''}
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
               {tierItems.map((item) => {
@@ -2871,7 +2892,7 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
                 return (
                   <div
                     key={item.id}
-                    className={`bg-white rounded-xl shadow-md p-2.5 sm:p-4 hover:shadow-lg transition ${tier === 'legendary' ? 'ring-1 ring-purple-200' : ''}`}
+                    className={`bg-white rounded-xl shadow-md p-2.5 sm:p-4 hover:shadow-lg transition ${tier === 'legendary' ? 'ring-1 ring-purple-200' : tier === 'ultra' ? 'ring-2 ring-amber-300 bg-gradient-to-b from-amber-50 to-white' : ''}`}
                   >
                     <div className="text-2xl sm:text-4xl mb-1.5 sm:mb-3 text-center">{item.emoji}</div>
                     <h3 className="font-bold text-gray-900 mb-0.5 sm:mb-1 text-xs sm:text-sm text-center">{item.name}</h3>
@@ -2902,6 +2923,11 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
 
 // UTILITY FUNCTIONS
 function calculateLevel(totalCoins) {
+  if (totalCoins >= 10000) return 'Legend'
+  if (totalCoins >= 7000) return 'Chairwoman'
+  if (totalCoins >= 5000) return 'Board Member'
+  if (totalCoins >= 3500) return 'Chief of Staff'
+  if (totalCoins >= 2500) return 'VP'
   if (totalCoins >= 1500) return 'CEO'
   if (totalCoins >= 700) return 'Director'
   if (totalCoins >= 300) return 'Manager'
@@ -2910,7 +2936,12 @@ function calculateLevel(totalCoins) {
 }
 
 function getNextLevelThreshold(totalCoins) {
-  if (totalCoins >= 1500) return 2000
+  if (totalCoins >= 10000) return 15000
+  if (totalCoins >= 7000) return 10000
+  if (totalCoins >= 5000) return 7000
+  if (totalCoins >= 3500) return 5000
+  if (totalCoins >= 2500) return 3500
+  if (totalCoins >= 1500) return 2500
   if (totalCoins >= 700) return 1500
   if (totalCoins >= 300) return 700
   if (totalCoins >= 100) return 300
