@@ -1221,7 +1221,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
       const { data } = await supabase
         .from('organisations')
         .select('*')
-        .eq('logo_found', false)
+        .is('logo_url', null)
         .limit(20)
       setOrganisations(data || [])
       setCurrentIndex(0)
@@ -1275,7 +1275,7 @@ function LogoHuntScreen({ player, onNavigate, onUpdateCoins }) {
     try {
       await supabase
         .from('organisations')
-        .update({ logo_url: dataUrl, logo_found: true })
+        .update({ logo_url: dataUrl, logo_updated_by: player?.name || 'unknown' })
         .eq('id', currentOrg.id)
 
       onUpdateCoins(40)

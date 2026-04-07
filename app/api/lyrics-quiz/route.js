@@ -1,5 +1,8 @@
 import { Anthropic } from '@anthropic-ai/sdk'
 
+// Increase Vercel serverless timeout (default is 10s, this sets 60s)
+export const maxDuration = 60
+
 const client = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 })
@@ -74,7 +77,7 @@ Make sure "options" always contains exactly 4 items including the correct answer
 
     return Response.json({ questions: validated })
   } catch (error) {
-    console.error('Error generating lyrics quiz:', error)
+    console.error('Error generating lyrics quiz:', error?.message || error)
     return Response.json(
       { error: 'Failed to generate quiz questions' },
       { status: 500 }
