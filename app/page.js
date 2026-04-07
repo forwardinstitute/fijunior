@@ -515,13 +515,14 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
   const ownedEmojis = player.desk_items || []
   const [positions, setPositions] = useState(player.desk_positions || {})
   const [dragging, setDragging] = useState(null)
+  const [selectedItem, setSelectedItem] = useState(null)
   const deskRef = useRef(null)
   const saveTimeout = useRef(null)
 
   const getItemPos = (emoji) => {
-    if (positions[emoji]) return positions[emoji]
-    if (DEFAULT_POSITIONS[emoji]) return DEFAULT_POSITIONS[emoji]
-    return { top: 50, left: 50 }
+    const saved = positions[emoji]
+    const defaults = DEFAULT_POSITIONS[emoji] || { top: 50, left: 50 }
+    return { top: saved?.top ?? defaults.top, left: saved?.left ?? defaults.left, scale: saved?.scale ?? 1 }
   }
 
   const savePositions = async (newPositions) => {
@@ -541,9 +542,18 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
 
   const handleDragStart = (emoji, e) => {
     e.preventDefault()
+    setSelectedItem(emoji)
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     const clientY = e.touches ? e.touches[0].clientY : e.clientY
-    setDragging({ emoji, startX: clientX, startY: clientY, startPos: getItemPos(emoji) })
+    setDragging({ emoji, startX: clientX, startY: clientY, startPos: getItemPos(emoji), moved: false })
+  }
+
+  const changeItemScale = (emoji, delta) => {
+    const pos = getItemPos(emoji)
+    const newScale = Math.max(0.5, Math.min(2.5, (pos.scale || 1) + delta))
+    const newPositions = { ...positions, [emoji]: { ...pos, scale: newScale } }
+    setPositions(newPositions)
+    savePositions(newPositions)
   }
 
   useEffect(() => {
@@ -560,10 +570,17 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
       const newTop = Math.max(0, Math.min(85, dragging.startPos.top + dy))
       const newLeft = Math.max(0, Math.min(92, dragging.startPos.left + dx))
 
-      const newPositions = { ...positions, [dragging.emoji]: { top: newTop, left: newLeft } }
+      // Mark as moved if dragged more than a tiny amount
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) dragging.moved = true
+
+      const newPositions = { ...positions, [dragging.emoji]: { top: newTop, left: newLeft, scale: dragging.startPos.scale || 1 } }
       setPositions(newPositions)
     }
     const handleEnd = () => {
+      // If it was just a tap (no drag), toggle selection
+      if (!dragging.moved) {
+        setSelectedItem(prev => prev === dragging.emoji ? null : dragging.emoji)
+      }
       savePositions(positions)
       setDragging(null)
     }
@@ -598,9 +615,9 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           </div>
         </div>
 
-        <div ref={deskRef} className="relative w-full rounded-xl overflow-hidden select-none touch-none" style={{ aspectRatio: '16/9' }}>
+        <div ref={deskRef} className="relative w-full rounded-xl overflow-hidden select-none touch-none" style={{ aspectRatio: '16/9' }} onClick={(e) => { if (e.target === e.currentTarget || !e.target.closest('[data-desk-item]')) setSelectedItem(null) }}>
           {/* Room background - wall */}
-          <div className="absolute inset-0 bg-gradient-to-b from-sky/30 to-sky/10"></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-sky/30 to-sky/10" onClick={() => setSelectedItem(null)}></div>
 
           {/* Window */}
           <div className="absolute top-4 left-4 w-16 sm:w-28 h-14 sm:h-24 bg-sky/40 rounded border-2 sm:border-4 border-white/80 shadow-inner">
@@ -608,7 +625,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           </div>
 
           {/* Desk surface */}
-          <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-amber-700 to-amber-800 rounded-t-sm">
+          <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-amber-700 to-amber-800 rounded-t-sm" onClick={() => setSelectedItem(null)}>
             <div className="absolute top-3 left-0 right-0 h-px bg-amber-600/40"></div>
             <div className="absolute top-8 left-0 right-0 h-px bg-amber-900/20"></div>
             <div className="absolute top-0 left-0 right-0 h-2 bg-amber-900/30 rounded-t"></div>
@@ -659,20 +676,49 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
             if (!meta) return null
             const pos = getItemPos(emoji)
             const isDragging = dragging?.emoji === emoji
+            const isSelected = selectedItem === emoji
             return (
               <div
                 key={emoji}
-                className={`absolute group ${isDragging ? 'z-50 scale-110' : 'z-10'} cursor-grab active:cursor-grabbing`}
+                data-desk-item="true"
+                className={`absolute group ${isDragging ? 'z-50' : isSelected ? 'z-40' : 'z-10'} cursor-grab active:cursor-grabbing`}
                 style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
                 onMouseDown={(e) => handleDragStart(emoji, e)}
                 onTouchStart={(e) => handleDragStart(emoji, e)}
-                title={`${meta.name} - drag to move`}
+                title={`${meta.name} - drag to move, tap to resize`}
               >
-                <span className={`${meta.size} drop-shadow-lg inline-block transition-transform ${isDragging ? '' : 'hover:scale-125'}`}>
+                <span
+                  className={`drop-shadow-lg inline-block transition-transform origin-center ${isDragging ? '' : 'hover:scale-110'}`}
+                  style={{ fontSize: `${1.8 * (pos.scale || 1)}rem`, lineHeight: 1 }}
+                >
                   {emoji}
                 </span>
-                {!isDragging && (
+                {isSelected && !isDragging && (
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50">
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); changeItemScale(emoji, -0.2) }}
+                      className="w-6 h-6 bg-white text-night rounded-full shadow-lg flex items-center justify-center text-sm font-bold hover:bg-gray-100 active:bg-gray-200 border border-gray-300"
+                    >−</button>
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); changeItemScale(emoji, 0.2) }}
+                      className="w-6 h-6 bg-white text-night rounded-full shadow-lg flex items-center justify-center text-sm font-bold hover:bg-gray-100 active:bg-gray-200 border border-gray-300"
+                    >+</button>
+                  </div>
+                )}
+                {isSelected && !isDragging && (
+                  <div className="absolute -inset-1.5 border-2 border-dashed border-forest/60 rounded-lg pointer-events-none"></div>
+                )}
+                {!isDragging && !isSelected && (
                   <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-night/80 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    {meta.name}
+                  </div>
+                )}
+                {isSelected && !isDragging && (
+                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-forest text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap pointer-events-none">
                     {meta.name}
                   </div>
                 )}
@@ -692,7 +738,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           {/* Drag hint */}
           {ownedEmojis.length > 0 && !dragging && (
             <div className="absolute bottom-1 right-2 text-[10px] sm:text-xs text-amber-300/70">
-              Drag items to rearrange
+              Drag to move · Tap to resize
             </div>
           )}
         </div>
@@ -2456,72 +2502,90 @@ function OddOneOutGame({ onBack, onUpdateCoins, playerAge = 12 }) {
 
 // LYRICS QUIZ GAME
 function LyricsQuizGame({ onBack, onUpdateCoins, playerAge = 12 }) {
-  const ALL_SONGS = [
-    // Taylor Swift
-    { artist: 'Taylor Swift', song: 'Shake It Off', lyric: "Cause the players gonna play, play, play, play, play", blank: "And the haters gonna ___", answer: 'hate', options: ['hate', 'wait', 'skate', 'late'] },
-    { artist: 'Taylor Swift', song: 'Love Story', lyric: "Romeo take me somewhere we can be alone", blank: "I'll be waiting, all there's left to do is ___", answer: 'run', options: ['run', 'cry', 'hide', 'dance'] },
-    { artist: 'Taylor Swift', song: 'Blank Space', lyric: "Nice to meet you, where you been?", blank: "I could show you incredible ___", answer: 'things', options: ['things', 'times', 'dreams', 'sights'] },
-    { artist: 'Taylor Swift', song: 'Anti-Hero', lyric: "I have this thing where I get older but just never wiser", blank: "It's me, hi, I'm the ___, it's me", answer: 'problem', options: ['problem', 'reason', 'answer', 'person'] },
-    { artist: 'Taylor Swift', song: 'Cruel Summer', lyric: "Fever dream high in the quiet of the night", blank: "You know that I caught it, bad blood, ___", answer: 'karma', options: ['karma', 'fever', 'thunder', 'midnight'] },
-    { artist: 'Taylor Swift', song: 'Cruel Summer', lyric: "And it's new, the shape of your body", blank: "It's blue, the feeling I've ___", answer: 'got', options: ['got', 'lost', 'found', 'known'] },
-    // Olivia Rodrigo
-    { artist: 'Olivia Rodrigo', song: 'good 4 u', lyric: "Well, good for you, I guess you moved on real easily", blank: "You look happy and ___, not me", answer: 'healthy', options: ['healthy', 'wealthy', 'pretty', 'friendly'] },
-    { artist: 'Olivia Rodrigo', song: 'drivers license', lyric: "I got my driver's license last week", blank: "Just like we always talked ___", answer: 'about', options: ['about', 'before', 'together', 'forever'] },
-    { artist: 'Olivia Rodrigo', song: 'deja vu', lyric: "Car rides to Malibu, strawberry ice cream", blank: "One spoon for two, and trading ___ with you", answer: 'jackets', options: ['jackets', 'secrets', 'stories', 'numbers'] },
-    // Harry Styles
-    { artist: 'Harry Styles', song: 'Watermelon Sugar', lyric: "Tastes like strawberries on a summer evenin'", blank: "And it sounds just like a ___", answer: 'song', options: ['song', 'dream', 'wish', 'wave'] },
-    { artist: 'Harry Styles', song: 'As It Was', lyric: "Holding me back, gravity's holding me back", blank: "I want you to hold out the palm of your ___", answer: 'hand', options: ['hand', 'heart', 'soul', 'love'] },
-    { artist: 'Harry Styles', song: 'Sign of the Times', lyric: "Just stop your crying, it's a sign of the times", blank: "Welcome to the final show, hope you're wearing your best ___", answer: 'clothes', options: ['clothes', 'smile', 'shoes', 'crown'] },
-    // Meghan Trainor
-    { artist: 'Meghan Trainor', song: 'All About That Bass', lyric: "Because you know I'm all about that bass", blank: "'Bout that bass, no ___", answer: 'treble', options: ['treble', 'trouble', 'problem', 'wobble'] },
-    { artist: 'Meghan Trainor', song: 'Me Too', lyric: "If I was you, I'd wanna be me too", blank: "I'd wanna be me ___", answer: 'too', options: ['too', 'now', 'more', 'twice'] },
-    // Miley Cyrus
-    { artist: 'Miley Cyrus', song: 'Flowers', lyric: "I can buy myself flowers, write my name in the sand", blank: "Talk to myself for hours, say things you don't ___", answer: 'understand', options: ['understand', 'remember', 'believe', 'appreciate'] },
-    { artist: 'Miley Cyrus', song: 'Party in the U.S.A.', lyric: "So I put my hands up, they're playing my song", blank: "The butterflies fly away, nodding my head like ___", answer: 'yeah', options: ['yeah', 'wow', 'hey', 'yay'] },
-    { artist: 'Miley Cyrus', song: 'Wrecking Ball', lyric: "I came in like a wrecking ball", blank: "I never hit so hard in ___", answer: 'love', options: ['love', 'life', 'pain', 'vain'] },
-    // SIX the Musical
-    { artist: 'SIX', song: 'Ex-Wives', lyric: "Divorced, beheaded, died", blank: "Divorced, beheaded, ___", answer: 'survived', options: ['survived', 'revived', 'arrived', 'thrived'] },
-    { artist: 'SIX', song: 'Don\'t Lose Ur Head', lyric: "Sorry not sorry 'bout what I said", blank: "Don't lose ur ___", answer: 'head', options: ['head', 'mind', 'cool', 'heart'] },
-    { artist: 'SIX', song: 'Six', lyric: "All you ever hear and read about", blank: "Is our ___ to the crown", answer: 'connection', options: ['connection', 'devotion', 'reaction', 'attraction'] },
-    // Dua Lipa
-    { artist: 'Dua Lipa', song: 'Levitating', lyric: "If you wanna run away with me, I know a galaxy", blank: "And I can take you for a ride, I had a premonition that we fell into a ___", answer: 'rhythm', options: ['rhythm', 'vision', 'feeling', 'mission'] },
-    { artist: 'Dua Lipa', song: 'Don\'t Start Now', lyric: "If you don't wanna see me dancing with somebody", blank: "Don't show up, don't come out, don't ___ now", answer: 'start', options: ['start', 'stop', 'cry', 'call'] },
-    // Lizzo
-    { artist: 'Lizzo', song: 'About Damn Time', lyric: "In a minute, I'mma need a sentimental man or woman", blank: "To pump me up, feeling fussy, walking in my ___ shoes", answer: 'Balenciussy', options: ['favourite', 'sparkly', 'fancy', 'golden'] },
-    { artist: 'Lizzo', song: 'Good As Hell', lyric: "If he don't love you anymore", blank: "Just walk your fine self out the ___", answer: 'door', options: ['door', 'room', 'way', 'house'] },
+  const AVAILABLE_ARTISTS = [
+    { name: 'Taylor Swift', emoji: '🎤' },
+    { name: 'Olivia Rodrigo', emoji: '🎸' },
+    { name: 'Harry Styles', emoji: '🌈' },
+    { name: 'Meghan Trainor', emoji: '💃' },
+    { name: 'Miley Cyrus', emoji: '🌸' },
+    { name: 'SIX the Musical', emoji: '👑' },
+    { name: 'Dua Lipa', emoji: '✨' },
+    { name: 'Lizzo', emoji: '💜' },
+    { name: 'Billie Eilish', emoji: '🖤' },
+    { name: 'Ed Sheeran', emoji: '🎻' },
+    { name: 'Bruno Mars', emoji: '🪐' },
+    { name: 'Ariana Grande', emoji: '☁️' },
+    { name: 'Sabrina Carpenter', emoji: '💅' },
+    { name: 'Doja Cat', emoji: '🐱' },
+    { name: 'Beyonce', emoji: '🐝' },
   ]
 
-  // Shuffle and pick 10 questions
-  const [questions] = useState(() => {
-    const shuffled = [...ALL_SONGS]
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
-    }
-    // Shuffle options for each question too
-    return shuffled.slice(0, 10).map(q => {
-      const opts = [...q.options]
-      for (let i = opts.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [opts[i], opts[j]] = [opts[j], opts[i]]
-      }
-      return { ...q, options: opts }
-    })
-  })
-
+  const [phase, setPhase] = useState('pick') // 'pick' | 'loading' | 'quiz' | 'done' | 'error'
+  const [selectedArtists, setSelectedArtists] = useState([])
+  const [questions, setQuestions] = useState([])
   const [current, setCurrent] = useState(0)
   const [score, setScore] = useState(0)
   const [selected, setSelected] = useState(null)
-  const [gameOver, setGameOver] = useState(false)
   const [coinsPaid, setCoinsPaid] = useState(false)
   const [streak, setStreak] = useState(0)
+  const [bestStreak, setBestStreak] = useState(0)
+  const fetchRef = useRef(false)
+
+  const toggleArtist = (name) => {
+    setSelectedArtists(prev =>
+      prev.includes(name) ? prev.filter(a => a !== name) : [...prev, name]
+    )
+  }
+
+  const startQuiz = async () => {
+    if (selectedArtists.length === 0) return
+    setPhase('loading')
+    fetchRef.current = true
+
+    try {
+      const res = await fetch('/api/lyrics-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artists: selectedArtists, count: 10 }),
+      })
+
+      if (!fetchRef.current) return
+      const data = await res.json()
+
+      if (data.error || !data.questions || data.questions.length === 0) {
+        throw new Error(data.error || 'No questions returned')
+      }
+
+      // Shuffle options for each question
+      const shuffled = data.questions.map(q => {
+        const opts = [...q.options]
+        for (let i = opts.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [opts[i], opts[j]] = [opts[j], opts[i]]
+        }
+        return { ...q, options: opts }
+      })
+
+      setQuestions(shuffled)
+      setPhase('quiz')
+    } catch (err) {
+      console.error('Lyrics quiz error:', err)
+      if (fetchRef.current) setPhase('error')
+    }
+  }
+
+  useEffect(() => {
+    return () => { fetchRef.current = false }
+  }, [])
 
   const handleAnswer = (option) => {
     if (selected !== null) return
     setSelected(option)
     if (option === questions[current].answer) {
       setScore(score + 1)
-      setStreak(streak + 1)
+      const newStreak = streak + 1
+      setStreak(newStreak)
+      if (newStreak > bestStreak) setBestStreak(newStreak)
     } else {
       setStreak(0)
     }
@@ -2529,7 +2593,7 @@ function LyricsQuizGame({ onBack, onUpdateCoins, playerAge = 12 }) {
 
   const nextQuestion = () => {
     if (current + 1 >= questions.length) {
-      setGameOver(true)
+      setPhase('done')
     } else {
       setCurrent(current + 1)
       setSelected(null)
@@ -2540,13 +2604,104 @@ function LyricsQuizGame({ onBack, onUpdateCoins, playerAge = 12 }) {
   const totalCoins = Math.round(score * 5 * ageBonus)
 
   useEffect(() => {
-    if (gameOver && !coinsPaid) {
+    if (phase === 'done' && !coinsPaid) {
       setCoinsPaid(true)
       onUpdateCoins(totalCoins > 0 ? totalCoins : 2)
     }
-  }, [gameOver])
+  }, [phase])
 
-  if (gameOver) {
+  // ARTIST SELECTION SCREEN
+  if (phase === 'pick') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="text-5xl mb-2">🎵</div>
+            <h2 className="text-xl sm:text-2xl font-bold text-night mb-1">Lyrics Quiz</h2>
+            <p className="text-sm sm:text-base text-gray-500">Pick the artists you want to be quizzed on!</p>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 mb-6">
+            {AVAILABLE_ARTISTS.map(({ name, emoji }) => {
+              const isSelected = selectedArtists.includes(name)
+              return (
+                <button
+                  key={name}
+                  onClick={() => toggleArtist(name)}
+                  className={`p-2.5 sm:p-3 rounded-lg border-2 transition text-left text-sm sm:text-base font-medium ${
+                    isSelected
+                      ? 'border-pink-500 bg-pink-50 text-pink-700'
+                      : 'border-gray-200 hover:border-pink-300 hover:bg-pink-50/50 text-gray-700'
+                  }`}
+                >
+                  <span className="mr-1.5">{emoji}</span>
+                  <span>{name}</span>
+                  {isSelected && <span className="ml-1 text-pink-500">✓</span>}
+                </button>
+              )
+            })}
+          </div>
+
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs sm:text-sm text-gray-400">
+              {selectedArtists.length === 0 ? 'Pick at least one artist' : `${selectedArtists.length} selected`}
+            </p>
+            <button
+              onClick={startQuiz}
+              disabled={selectedArtists.length === 0}
+              className={`px-5 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold transition text-sm sm:text-base ${
+                selectedArtists.length > 0
+                  ? 'bg-pink-500 text-white hover:bg-pink-600'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Start Quiz 🎶
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // LOADING
+  if (phase === 'loading') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-8 sm:p-12 text-center">
+          <div className="text-5xl mb-4 animate-bounce">🎵</div>
+          <h2 className="text-xl sm:text-2xl font-bold text-night mb-2">Creating your quiz...</h2>
+          <p className="text-sm sm:text-base text-gray-500">AI is picking the best lyrics from {selectedArtists.join(', ')}</p>
+          <div className="mt-6 flex justify-center gap-1">
+            <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: '0ms' }}></div>
+            <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: '200ms' }}></div>
+            <div className="w-2 h-2 bg-pink-400 rounded-full animate-pulse" style={{ animationDelay: '400ms' }}></div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // ERROR
+  if (phase === 'error') {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8 text-center">
+          <div className="text-5xl mb-4">😵</div>
+          <h2 className="text-xl font-bold text-night mb-2">Oops, something went wrong</h2>
+          <p className="text-sm text-gray-500 mb-4">The AI had a moment. Give it another go!</p>
+          <button onClick={() => { setPhase('pick'); setSelectedArtists([]) }} className="px-5 py-2.5 bg-pink-500 text-white rounded-lg font-bold hover:bg-pink-600 transition">
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // RESULTS
+  if (phase === 'done') {
     const messages = score >= 9 ? 'Pop royalty! 👑' : score >= 7 ? 'Total bop! 🎤' : score >= 5 ? 'Not bad! 🎧' : 'Keep listening! 🎵'
     return (
       <div className="max-w-2xl mx-auto">
@@ -2555,14 +2710,20 @@ function LyricsQuizGame({ onBack, onUpdateCoins, playerAge = 12 }) {
           <div className="text-6xl mb-4">🎵</div>
           <h2 className="text-2xl sm:text-3xl font-bold text-night mb-2">{messages}</h2>
           <p className="text-lg sm:text-xl text-gray-600 mb-2">{score} / {questions.length} correct</p>
-          {streak >= 3 && <p className="text-sm text-pink-500 mb-2">Best streak: {streak} in a row!</p>}
+          {bestStreak >= 3 && <p className="text-sm text-pink-500 mb-2">Best streak: {bestStreak} in a row! 🔥</p>}
           <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
-          <button onClick={onBack} className="px-6 py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">Back to Break Room</button>
+          <div className="flex gap-3 justify-center">
+            <button onClick={() => { setPhase('pick'); setSelectedArtists([]); setQuestions([]); setCurrent(0); setScore(0); setSelected(null); setCoinsPaid(false); setStreak(0); setBestStreak(0) }} className="px-5 py-3 bg-pink-500 text-white rounded-lg font-bold hover:bg-pink-600 transition">
+              Play Again 🎶
+            </button>
+            <button onClick={onBack} className="px-5 py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">Back to Break Room</button>
+          </div>
         </div>
       </div>
     )
   }
 
+  // QUIZ IN PROGRESS
   const q = questions[current]
 
   return (
