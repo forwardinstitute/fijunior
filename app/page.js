@@ -553,7 +553,6 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
 
   const handleDragStart = (emoji, e) => {
     e.preventDefault()
-    setSelectedItem(emoji)
     const clientX = e.touches ? e.touches[0].clientX : e.clientX
     const clientY = e.touches ? e.touches[0].clientY : e.clientY
     setDragging({ emoji, startX: clientX, startY: clientY, startPos: getItemPos(emoji), moved: false })
@@ -564,6 +563,33 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     const newScale = Math.max(0.5, Math.min(2.5, (pos.scale || 1) + delta))
     const newPositions = { ...positions, [emoji]: { ...pos, scale: newScale } }
     setPositions(newPositions)
+    savePositions(newPositions)
+  }
+
+  // Base prices for sell-back (quarter price)
+  const BASE_PRICES = {
+    '⭐': 20, '☕': 30, '🦆': 40, '🌱': 50, '🎀': 35,
+    '💡': 80, '📛': 100, '🍪': 90, '🪴': 110, '🕰️': 120, '📚': 130,
+    '🎧': 150, '🏆': 200, '✨': 180, '🧸': 175, '🎨': 200,
+    '🐠': 300, '🪩': 350, '🌍': 400, '🔮': 500,
+    '🚀': 750, '🐉': 800, '🌈': 900, '🦄': 1000, '💎': 1200, '👑': 1500, '🤖': 1800, '🏰': 2000,
+  }
+  const priceMultiplier = player.age >= 13 ? 1 : player.age >= 10 ? 0.7 : 0.5
+  const getSellPrice = (emoji) => Math.round((BASE_PRICES[emoji] || 50) * priceMultiplier * 0.25)
+
+  const [confirmSell, setConfirmSell] = useState(null)
+
+  const handleSell = (emoji) => {
+    const sellPrice = getSellPrice(emoji)
+    const updatedDesk = (player.desk_items || []).filter(e => e !== emoji)
+    const newPositions = { ...positions }
+    delete newPositions[emoji]
+    setPositions(newPositions)
+    setSelectedItem(null)
+    setConfirmSell(null)
+    // Give coins back and update desk
+    onUpdateCoins(sellPrice, updatedDesk)
+    // Also save cleared position
     savePositions(newPositions)
   }
 
@@ -590,7 +616,14 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     const handleEnd = () => {
       // If it was just a tap (no drag), toggle selection
       if (!dragging.moved) {
-        setSelectedItem(prev => prev === dragging.emoji ? null : dragging.emoji)
+        setSelectedItem(prev => {
+          const next = prev === dragging.emoji ? null : dragging.emoji
+          if (!next) setConfirmSell(null)
+          return next
+        })
+      } else {
+        // If dragged, keep it selected
+        setSelectedItem(dragging.emoji)
       }
       savePositions(positions)
       setDragging(null)
@@ -626,9 +659,9 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           </div>
         </div>
 
-        <div ref={deskRef} className="relative w-full rounded-xl overflow-hidden select-none touch-none" style={{ aspectRatio: '16/9' }} onClick={(e) => { if (e.target === e.currentTarget || !e.target.closest('[data-desk-item]')) setSelectedItem(null) }}>
+        <div ref={deskRef} className="relative w-full rounded-xl overflow-hidden select-none touch-none" style={{ aspectRatio: '16/9' }} onClick={(e) => { if (e.target === e.currentTarget || !e.target.closest('[data-desk-item]')) { setSelectedItem(null); setConfirmSell(null) } }}>
           {/* Room background - wall */}
-          <div className="absolute inset-0 bg-gradient-to-b from-sky/30 to-sky/10" onClick={() => setSelectedItem(null)}></div>
+          <div className="absolute inset-0 bg-gradient-to-b from-sky/30 to-sky/10" onClick={() => { setSelectedItem(null); setConfirmSell(null) }}></div>
 
           {/* Window */}
           <div className="absolute top-4 left-4 w-16 sm:w-28 h-14 sm:h-24 bg-sky/40 rounded border-2 sm:border-4 border-white/80 shadow-inner">
@@ -636,7 +669,7 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           </div>
 
           {/* Desk surface */}
-          <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-amber-700 to-amber-800 rounded-t-sm" onClick={() => setSelectedItem(null)}>
+          <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-amber-700 to-amber-800 rounded-t-sm" onClick={() => { setSelectedItem(null); setConfirmSell(null) }}>
             <div className="absolute top-3 left-0 right-0 h-px bg-amber-600/40"></div>
             <div className="absolute top-8 left-0 right-0 h-px bg-amber-900/20"></div>
             <div className="absolute top-0 left-0 right-0 h-2 bg-amber-900/30 rounded-t"></div>
@@ -728,9 +761,32 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
                     {meta.name}
                   </div>
                 )}
-                {isSelected && !isDragging && (
-                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-forest text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap pointer-events-none">
-                    {meta.name}
+                {isSelected && !isDragging && confirmSell !== emoji && (
+                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-50">
+                    <span className="bg-forest text-white text-[10px] sm:text-xs px-1.5 py-0.5 rounded whitespace-nowrap">{meta.name}</span>
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); setConfirmSell(emoji) }}
+                      className="bg-red-500 text-white text-[10px] sm:text-xs px-1.5 py-0.5 rounded hover:bg-red-600 transition whitespace-nowrap"
+                    >Sell {getSellPrice(emoji)}💰</button>
+                  </div>
+                )}
+                {isSelected && !isDragging && confirmSell === emoji && (
+                  <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 z-50">
+                    <span className="text-[10px] sm:text-xs text-white bg-night/80 px-1.5 py-0.5 rounded whitespace-nowrap">Sure?</span>
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); handleSell(emoji) }}
+                      className="bg-red-600 text-white text-[10px] sm:text-xs px-1.5 py-0.5 rounded hover:bg-red-700 transition font-bold whitespace-nowrap"
+                    >Yes</button>
+                    <button
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                      onClick={(e) => { e.stopPropagation(); setConfirmSell(null) }}
+                      className="bg-gray-400 text-white text-[10px] sm:text-xs px-1.5 py-0.5 rounded hover:bg-gray-500 transition whitespace-nowrap"
+                    >No</button>
                   </div>
                 )}
               </div>
