@@ -216,6 +216,26 @@ function HubScreen({ player, onNavigate }) {
   const nextLevelCoins = getNextLevelThreshold(player.total_coins_earned)
   const progressPercent = Math.round((player.total_coins_earned / nextLevelCoins) * 100)
 
+  // Fortune cookie - one per day based on date
+  const FORTUNES = [
+    { fact: 'The word "boss" comes from the Dutch word "baas", meaning master.', tip: 'Great leaders don\'t boss people around though!' },
+    { fact: 'Teamwork makes the dream work! Geese fly 71% further in formation than alone.', tip: 'Find your flock and fly further.' },
+    { fact: 'The average person spends 90,000 hours at work over their lifetime.', tip: 'Make every hour count!' },
+    { fact: 'Google gives engineers 20% of their time to work on passion projects.', tip: 'Gmail was invented during 20% time!' },
+    { fact: 'The first ever email was sent in 1971 by Ray Tomlinson.', tip: 'He couldn\'t remember what it said.' },
+    { fact: 'Lego is the world\'s largest tyre manufacturer.', tip: 'Big things start with small bricks.' },
+    { fact: 'The Post-it Note was invented by accident.', tip: 'Sometimes mistakes lead to the best ideas.' },
+    { fact: 'Octopuses have 3 hearts and blue blood.', tip: 'Put your heart(s) into everything you do!' },
+    { fact: 'The first computer programmer was Ada Lovelace, in the 1840s.', tip: 'She saw the potential before anyone else.' },
+    { fact: 'A group of flamingos is called a "flamboyance".', tip: 'Be a flamboyance of one.' },
+    { fact: 'Walt Disney was fired from a newspaper for "lacking imagination".', tip: 'Don\'t let anyone else define your potential.' },
+    { fact: 'The paperclip was invented in Norway in 1899.', tip: 'Simple ideas can hold everything together.' },
+    { fact: 'Bees make decisions democratically by dancing.', tip: 'Every voice matters in a great team.' },
+    { fact: 'The Forward Institute works with leaders across 6 sectors.', tip: 'The best ideas come from mixing different perspectives.' },
+  ]
+  const todayFortune = FORTUNES[new Date().getDate() % FORTUNES.length]
+  const [fortuneOpen, setFortuneOpen] = useState(false)
+
   const rooms = [
     {
       id: 'desk',
@@ -300,6 +320,24 @@ function HubScreen({ player, onNavigate }) {
         </div>
         <p className="text-xs text-day/70">{player.total_coins_earned} / {nextLevelCoins} coins to next level</p>
       </div>
+
+      {/* Fortune Cookie */}
+      <button
+        onClick={() => setFortuneOpen(!fortuneOpen)}
+        className="w-full mb-4 sm:mb-6 bg-white rounded-xl shadow-md p-3 sm:p-4 text-left hover:shadow-lg transition"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-2xl sm:text-3xl shrink-0">🥠</span>
+          {fortuneOpen ? (
+            <div className="min-w-0 animate-fade-in">
+              <p className="text-sm sm:text-base font-semibold text-night">{todayFortune.fact}</p>
+              <p className="text-xs sm:text-sm text-forest mt-1">{todayFortune.tip}</p>
+            </div>
+          ) : (
+            <p className="text-sm sm:text-base text-gray-500 font-medium">Today's Fortune Cookie - tap to open!</p>
+          )}
+        </div>
+      </button>
 
       {/* Room Cards Grouped by Category */}
       <div>
@@ -442,18 +480,104 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
     }
   }
 
-  // Desk item positions - where each item sits on the visual desk
-  const DESK_ITEMS = {
-    '🌱': { name: 'Plant', top: '8%', left: '2%', size: 'text-4xl', label: 'On the windowsill' },
-    '☕': { name: 'Coffee Mug', top: '52%', left: '68%', size: 'text-3xl', label: 'Next to the keyboard' },
-    '⭐': { name: 'Laptop Sticker', top: '28%', left: '38%', size: 'text-2xl', label: 'On the laptop' },
-    '💡': { name: 'Desk Lamp', top: '12%', left: '75%', size: 'text-4xl', label: 'Corner of desk' },
-    '🏆': { name: 'Trophy', top: '6%', left: '88%', size: 'text-4xl', label: 'Pride of place' },
-    '📛': { name: 'Name Plate', top: '58%', left: '30%', size: 'text-2xl', label: 'Front of desk' },
-    '🎧': { name: 'Headphones', top: '18%', left: '55%', size: 'text-3xl', label: 'On the monitor' },
-    '🦆': { name: 'Rubber Duck', top: '48%', left: '18%', size: 'text-3xl', label: 'Debugging buddy' },
+  // Default positions for desk items (used when no custom position saved)
+  const DEFAULT_POSITIONS = {
+    '🌱': { top: 8, left: 2 }, '☕': { top: 52, left: 68 }, '⭐': { top: 28, left: 38 },
+    '💡': { top: 12, left: 75 }, '🏆': { top: 6, left: 88 }, '📛': { top: 58, left: 30 },
+    '🎧': { top: 18, left: 55 }, '🦆': { top: 48, left: 18 }, '🐠': { top: 5, left: 15 },
+    '🪩': { top: 3, left: 45 }, '📚': { top: 8, left: 90 }, '🍪': { top: 55, left: 85 },
+    '🌍': { top: 4, left: 70 }, '✨': { top: 10, left: 35 }, '🧸': { top: 50, left: 5 },
+    '🎨': { top: 15, left: 8 }, '🪴': { top: 52, left: 50 }, '🕰️': { top: 3, left: 60 },
+    '🎀': { top: 22, left: 90 }, '🔮': { top: 48, left: 78 },
+  }
+  const DESK_ITEM_META = {
+    '🌱': { name: 'Plant', size: 'text-3xl sm:text-4xl' },
+    '☕': { name: 'Coffee Mug', size: 'text-2xl sm:text-3xl' },
+    '⭐': { name: 'Laptop Sticker', size: 'text-xl sm:text-2xl' },
+    '💡': { name: 'Desk Lamp', size: 'text-3xl sm:text-4xl' },
+    '🏆': { name: 'Trophy', size: 'text-3xl sm:text-4xl' },
+    '📛': { name: 'Name Plate', size: 'text-xl sm:text-2xl' },
+    '🎧': { name: 'Headphones', size: 'text-2xl sm:text-3xl' },
+    '🦆': { name: 'Rubber Duck', size: 'text-2xl sm:text-3xl' },
+    '🐠': { name: 'Fish Tank', size: 'text-3xl sm:text-4xl' },
+    '🪩': { name: 'Disco Ball', size: 'text-3xl sm:text-4xl' },
+    '📚': { name: 'Bookshelf', size: 'text-2xl sm:text-3xl' },
+    '🍪': { name: 'Snack Bowl', size: 'text-2xl sm:text-3xl' },
+    '🌍': { name: 'Globe', size: 'text-3xl sm:text-4xl' },
+    '✨': { name: 'Fairy Lights', size: 'text-2xl sm:text-3xl' },
+    '🧸': { name: 'Teddy Bear', size: 'text-3xl sm:text-4xl' },
+    '🎨': { name: 'Art Easel', size: 'text-2xl sm:text-3xl' },
+    '🪴': { name: 'Bonsai Tree', size: 'text-2xl sm:text-3xl' },
+    '🕰️': { name: 'Desk Clock', size: 'text-2xl sm:text-3xl' },
+    '🎀': { name: 'Bow', size: 'text-xl sm:text-2xl' },
+    '🔮': { name: 'Crystal Ball', size: 'text-2xl sm:text-3xl' },
   }
   const ownedEmojis = player.desk_items || []
+  const [positions, setPositions] = useState(player.desk_positions || {})
+  const [dragging, setDragging] = useState(null)
+  const deskRef = useRef(null)
+  const saveTimeout = useRef(null)
+
+  const getItemPos = (emoji) => {
+    if (positions[emoji]) return positions[emoji]
+    if (DEFAULT_POSITIONS[emoji]) return DEFAULT_POSITIONS[emoji]
+    return { top: 50, left: 50 }
+  }
+
+  const savePositions = async (newPositions) => {
+    // Debounce saves - wait 500ms after last drag
+    if (saveTimeout.current) clearTimeout(saveTimeout.current)
+    saveTimeout.current = setTimeout(async () => {
+      try {
+        await supabase
+          .from('players')
+          .update({ desk_positions: newPositions })
+          .eq('id', player.id)
+      } catch (e) {
+        console.error('Failed to save positions:', e)
+      }
+    }, 500)
+  }
+
+  const handleDragStart = (emoji, e) => {
+    e.preventDefault()
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY
+    setDragging({ emoji, startX: clientX, startY: clientY, startPos: getItemPos(emoji) })
+  }
+
+  useEffect(() => {
+    if (!dragging) return
+    const handleMove = (e) => {
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY
+      const rect = deskRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const dx = ((clientX - dragging.startX) / rect.width) * 100
+      const dy = ((clientY - dragging.startY) / rect.height) * 100
+
+      const newTop = Math.max(0, Math.min(85, dragging.startPos.top + dy))
+      const newLeft = Math.max(0, Math.min(92, dragging.startPos.left + dx))
+
+      const newPositions = { ...positions, [dragging.emoji]: { top: newTop, left: newLeft } }
+      setPositions(newPositions)
+    }
+    const handleEnd = () => {
+      savePositions(positions)
+      setDragging(null)
+    }
+    window.addEventListener('mousemove', handleMove)
+    window.addEventListener('mouseup', handleEnd)
+    window.addEventListener('touchmove', handleMove, { passive: false })
+    window.addEventListener('touchend', handleEnd)
+    return () => {
+      window.removeEventListener('mousemove', handleMove)
+      window.removeEventListener('mouseup', handleEnd)
+      window.removeEventListener('touchmove', handleMove)
+      window.removeEventListener('touchend', handleEnd)
+    }
+  }, [dragging, positions])
 
   return (
     <div className="max-w-5xl mx-auto p-3 sm:p-6 animate-fade-in">
@@ -474,99 +598,101 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           </div>
         </div>
 
-        <div className="relative w-full rounded-xl overflow-hidden" style={{ aspectRatio: '16/9' }}>
+        <div ref={deskRef} className="relative w-full rounded-xl overflow-hidden select-none touch-none" style={{ aspectRatio: '16/9' }}>
           {/* Room background - wall */}
           <div className="absolute inset-0 bg-gradient-to-b from-sky/30 to-sky/10"></div>
 
           {/* Window */}
-          <div className="absolute top-4 left-4 w-28 h-24 bg-sky/40 rounded border-4 border-white/80 shadow-inner">
-            <div className="absolute inset-0 border-r-2 border-b-2 border-white/50" style={{ left: '50%', top: '50%' }}></div>
+          <div className="absolute top-4 left-4 w-16 sm:w-28 h-14 sm:h-24 bg-sky/40 rounded border-2 sm:border-4 border-white/80 shadow-inner">
             <div className="w-full h-1/2 border-b-2 border-white/50"></div>
           </div>
 
           {/* Desk surface */}
           <div className="absolute bottom-0 left-0 right-0 h-[45%] bg-gradient-to-b from-amber-700 to-amber-800 rounded-t-sm">
-            {/* Wood grain lines */}
             <div className="absolute top-3 left-0 right-0 h-px bg-amber-600/40"></div>
             <div className="absolute top-8 left-0 right-0 h-px bg-amber-900/20"></div>
-            <div className="absolute top-14 left-0 right-0 h-px bg-amber-600/30"></div>
-            {/* Desk edge */}
             <div className="absolute top-0 left-0 right-0 h-2 bg-amber-900/30 rounded-t"></div>
           </div>
 
           {/* Monitor */}
           <div className="absolute" style={{ top: '12%', left: '30%', width: '40%' }}>
-            <div className="bg-gray-800 rounded-lg p-1 shadow-xl">
+            <div className="bg-gray-800 rounded-lg p-0.5 sm:p-1 shadow-xl">
               <div className="bg-gradient-to-br from-forest/80 to-forest rounded aspect-video flex items-center justify-center">
                 <div className="text-center text-white">
-                  <p className="text-xs font-bold opacity-80">FORWARD HQ</p>
-                  <p className="text-lg">👋</p>
-                  <p className="text-xs opacity-60">{player.name}</p>
+                  <p className="text-[8px] sm:text-xs font-bold opacity-80">FORWARD HQ</p>
+                  <p className="text-sm sm:text-lg">👋</p>
+                  <p className="text-[8px] sm:text-xs opacity-60">{player.name}</p>
                 </div>
               </div>
             </div>
-            {/* Monitor stand */}
-            <div className="mx-auto w-8 h-3 bg-gray-700"></div>
-            <div className="mx-auto w-16 h-1 bg-gray-600 rounded-b"></div>
+            <div className="mx-auto w-4 sm:w-8 h-1.5 sm:h-3 bg-gray-700"></div>
+            <div className="mx-auto w-8 sm:w-16 h-0.5 sm:h-1 bg-gray-600 rounded-b"></div>
           </div>
 
           {/* Keyboard */}
           <div className="absolute bg-gray-300 rounded shadow-md" style={{ top: '62%', left: '32%', width: '28%', height: '8%' }}>
-            <div className="absolute inset-1 bg-gray-200 rounded flex items-center justify-center">
-              <div className="flex gap-px">
-                {[...Array(12)].map((_, i) => (
-                  <div key={i} className="w-1.5 h-1.5 bg-gray-400 rounded-sm"></div>
-                ))}
-              </div>
-            </div>
+            <div className="absolute inset-0.5 sm:inset-1 bg-gray-200 rounded"></div>
           </div>
 
           {/* Mouse */}
           <div className="absolute bg-gray-300 rounded-full shadow" style={{ top: '64%', left: '65%', width: '3%', height: '5%' }}></div>
 
-          {/* Chair back (behind desk) */}
+          {/* Chair back */}
           <div className="absolute bg-gray-700 rounded-t-xl shadow-lg" style={{ bottom: '44%', left: '40%', width: '20%', height: '15%' }}>
-            <div className="absolute inset-2 rounded-t bg-gray-600"></div>
+            <div className="absolute inset-1 sm:inset-2 rounded-t bg-gray-600"></div>
           </div>
 
           {/* Photo frame on wall */}
-          <div className="absolute bg-amber-900 rounded shadow-md p-1" style={{ top: '5%', left: '55%', width: '12%' }}>
+          <div className="absolute bg-amber-900 rounded shadow-md p-0.5 sm:p-1" style={{ top: '5%', left: '55%', width: '10%', maxWidth: '60px' }}>
             <div className="bg-white rounded-sm aspect-square flex items-center justify-center overflow-hidden">
               {avatarPreview ? (
                 <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-2xl">🖼️</span>
+                <span className="text-base sm:text-2xl">🖼️</span>
               )}
             </div>
           </div>
 
-          {/* Owned items placed on the desk */}
-          {Object.entries(DESK_ITEMS).map(([emoji, config]) => {
-            const isOwned = ownedEmojis.includes(emoji)
-            if (!isOwned) return null
+          {/* Draggable owned items */}
+          {ownedEmojis.map((emoji) => {
+            const meta = DESK_ITEM_META[emoji]
+            if (!meta) return null
+            const pos = getItemPos(emoji)
+            const isDragging = dragging?.emoji === emoji
             return (
               <div
                 key={emoji}
-                className="absolute transition-all duration-500 group cursor-default"
-                style={{ top: config.top, left: config.left }}
-                title={config.name}
+                className={`absolute group ${isDragging ? 'z-50 scale-110' : 'z-10'} cursor-grab active:cursor-grabbing`}
+                style={{ top: `${pos.top}%`, left: `${pos.left}%` }}
+                onMouseDown={(e) => handleDragStart(emoji, e)}
+                onTouchStart={(e) => handleDragStart(emoji, e)}
+                title={`${meta.name} - drag to move`}
               >
-                <span className={`${config.size} drop-shadow-lg hover:scale-125 transition-transform inline-block`}>
+                <span className={`${meta.size} drop-shadow-lg inline-block transition-transform ${isDragging ? '' : 'hover:scale-125'}`}>
                   {emoji}
                 </span>
-                <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-night/80 text-white text-xs px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                  {config.name}
-                </div>
+                {!isDragging && (
+                  <div className="absolute -bottom-5 left-1/2 -translate-x-1/2 bg-night/80 text-white text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    {meta.name}
+                  </div>
+                )}
               </div>
             )
           })}
 
           {/* Empty desk message */}
           {ownedEmojis.length === 0 && (
-            <div className="absolute bottom-12 left-1/2 -translate-x-1/2 text-center">
-              <p className="text-amber-200 text-sm font-medium bg-amber-900/60 px-4 py-2 rounded-lg">
+            <div className="absolute bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 text-center">
+              <p className="text-amber-200 text-xs sm:text-sm font-medium bg-amber-900/60 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg">
                 Your desk is empty! Visit the Shop to buy items
               </p>
+            </div>
+          )}
+
+          {/* Drag hint */}
+          {ownedEmojis.length > 0 && !dragging && (
+            <div className="absolute bottom-1 right-2 text-[10px] sm:text-xs text-amber-300/70">
+              Drag items to rearrange
             </div>
           )}
         </div>
@@ -687,10 +813,10 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
           {/* Desk items inventory */}
           {ownedEmojis.length > 0 && (
             <div className="mt-4 bg-day p-4 rounded-lg">
-              <p className="text-sm text-gray-600 mb-2">Items on your desk ({ownedEmojis.length}/8)</p>
-              <div className="flex gap-3 flex-wrap">
+              <p className="text-sm text-gray-600 mb-2">Items on your desk ({ownedEmojis.length}/20)</p>
+              <div className="flex gap-2 sm:gap-3 flex-wrap">
                 {ownedEmojis.map((emoji, i) => (
-                  <span key={i} className="text-2xl" title={DESK_ITEMS[emoji]?.name}>{emoji}</span>
+                  <span key={i} className="text-xl sm:text-2xl" title={DESK_ITEM_META[emoji]?.name}>{emoji}</span>
                 ))}
               </div>
             </div>
@@ -698,29 +824,48 @@ function DeskScreen({ player, onNavigate, onUpdateCoins }) {
         </div>
       </div>
 
-      {/* Achievements */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <h3 className="font-bold text-night mb-4">Achievements</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Achievement Badges */}
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+        <h3 className="font-bold text-night mb-3 sm:mb-4">Achievement Badges</h3>
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3">
           {[
-            { emoji: '📸', title: 'Picture Perfect', unlocked: player.achievements?.includes('Picture Perfect') },
-            { emoji: '🏆', title: 'First Classifier', unlocked: player.achievements?.includes('First Classifier') },
-            { emoji: '🔥', title: 'On Fire', unlocked: player.achievements?.includes('On Fire') },
-            { emoji: '💎', title: 'Whale', unlocked: player.achievements?.includes('Whale') },
-          ].map((achievement, idx) => (
+            { emoji: '📸', title: 'Selfie Star', desc: 'Upload a profile photo', unlocked: !!player.avatar_url },
+            { emoji: '🪙', title: 'First Coin', desc: 'Earn your first coin', unlocked: player.total_coins_earned >= 1 },
+            { emoji: '💰', title: 'Money Maker', desc: 'Earn 100 coins', unlocked: player.total_coins_earned >= 100 },
+            { emoji: '🤑', title: 'Coin Collector', desc: 'Earn 500 coins', unlocked: player.total_coins_earned >= 500 },
+            { emoji: '👑', title: 'Coin Royalty', desc: 'Earn 1000 coins', unlocked: player.total_coins_earned >= 1000 },
+            { emoji: '🛒', title: 'First Purchase', desc: 'Buy your first item', unlocked: ownedEmojis.length >= 1 },
+            { emoji: '🛍️', title: 'Shopaholic', desc: 'Buy 5 items', unlocked: ownedEmojis.length >= 5 },
+            { emoji: '🏠', title: 'Interior Designer', desc: 'Buy 10 items', unlocked: ownedEmojis.length >= 10 },
+            { emoji: '💎', title: 'Collector', desc: 'Own every item', unlocked: ownedEmojis.length >= 20 },
+            { emoji: '📊', title: 'Hard Worker', desc: 'Complete a task', unlocked: (player.tasks_completed || 0) >= 1 },
+            { emoji: '🔥', title: 'On Fire', desc: 'Complete 10 tasks', unlocked: (player.tasks_completed || 0) >= 10 },
+            { emoji: '⚡', title: 'Unstoppable', desc: 'Complete 25 tasks', unlocked: (player.tasks_completed || 0) >= 25 },
+            { emoji: '🎯', title: 'Analyst', desc: 'Reach Analyst rank', unlocked: player.total_coins_earned >= 100 },
+            { emoji: '📈', title: 'Manager', desc: 'Reach Manager rank', unlocked: player.total_coins_earned >= 300 },
+            { emoji: '🏢', title: 'Director', desc: 'Reach Director rank', unlocked: player.total_coins_earned >= 700 },
+            { emoji: '👔', title: 'CEO', desc: 'Reach CEO rank', unlocked: player.total_coins_earned >= 1500 },
+            { emoji: '🌟', title: 'Day One', desc: 'Sign in for the first time', unlocked: true },
+            { emoji: '🐠', title: 'Fancy', desc: 'Buy a legendary item', unlocked: ['🐠','🪩','🌍','🔮'].some(e => ownedEmojis.includes(e)) },
+          ].map((badge, idx) => (
             <div
               key={idx}
-              className={`p-4 rounded-lg text-center transition ${
-                achievement.unlocked
-                  ? 'bg-sunshine/20 border-2 border-sunshine'
-                  : 'bg-gray-100 opacity-50'
+              className={`p-2 sm:p-3 rounded-lg text-center transition ${
+                badge.unlocked
+                  ? 'bg-sunshine/20 border border-sunshine/50'
+                  : 'bg-gray-50 opacity-40'
               }`}
+              title={badge.desc}
             >
-              <div className="text-3xl mb-2">{achievement.emoji}</div>
-              <p className="text-sm font-semibold text-night">{achievement.title}</p>
+              <div className="text-2xl sm:text-3xl mb-1">{badge.emoji}</div>
+              <p className="text-[10px] sm:text-xs font-semibold text-night leading-tight">{badge.title}</p>
+              {badge.unlocked && <p className="text-[8px] sm:text-[10px] text-forest mt-0.5">Unlocked!</p>}
             </div>
           ))}
         </div>
+        <p className="text-xs text-gray-400 mt-3 text-center">
+          {[true, player.total_coins_earned >= 1, player.total_coins_earned >= 100, player.total_coins_earned >= 500, player.total_coins_earned >= 1000, ownedEmojis.length >= 1, ownedEmojis.length >= 5, ownedEmojis.length >= 10, ownedEmojis.length >= 20, (player.tasks_completed || 0) >= 1, (player.tasks_completed || 0) >= 10, (player.tasks_completed || 0) >= 25, player.total_coins_earned >= 100, player.total_coins_earned >= 300, player.total_coins_earned >= 700, player.total_coins_earned >= 1500, !!player.avatar_url, ['🐠','🪩','🌍','🔮'].some(e => ownedEmojis.includes(e))].filter(Boolean).length} / 18 badges unlocked
+        </p>
       </div>
     </div>
   )
@@ -2305,14 +2450,30 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
   const priceMultiplier = player.age >= 13 ? 1 : player.age >= 10 ? 0.7 : 0.5
 
   const baseItems = [
-    { id: 'plant', emoji: '🌱', name: 'Plant', basePrice: 50 },
-    { id: 'coffee', emoji: '☕', name: 'Coffee Mug', basePrice: 30 },
-    { id: 'sticker', emoji: '⭐', name: 'Laptop Sticker', basePrice: 20 },
-    { id: 'lamp', emoji: '💡', name: 'Desk Lamp', basePrice: 80 },
-    { id: 'trophy', emoji: '🏆', name: 'Trophy', basePrice: 200 },
-    { id: 'nameplate', emoji: '📛', name: 'Name Plate', basePrice: 100 },
-    { id: 'headphones', emoji: '🎧', name: 'Headphones', basePrice: 150 },
-    { id: 'duck', emoji: '🦆', name: 'Rubber Duck', basePrice: 40 },
+    // Starter items
+    { id: 'sticker', emoji: '⭐', name: 'Laptop Sticker', basePrice: 20, tier: 'starter' },
+    { id: 'coffee', emoji: '☕', name: 'Coffee Mug', basePrice: 30, tier: 'starter' },
+    { id: 'duck', emoji: '🦆', name: 'Rubber Duck', basePrice: 40, tier: 'starter' },
+    { id: 'plant', emoji: '🌱', name: 'Plant', basePrice: 50, tier: 'starter' },
+    { id: 'bow', emoji: '🎀', name: 'Bow', basePrice: 35, tier: 'starter' },
+    // Mid-range items
+    { id: 'lamp', emoji: '💡', name: 'Desk Lamp', basePrice: 80, tier: 'mid' },
+    { id: 'nameplate', emoji: '📛', name: 'Name Plate', basePrice: 100, tier: 'mid' },
+    { id: 'snacks', emoji: '🍪', name: 'Snack Bowl', basePrice: 90, tier: 'mid' },
+    { id: 'bonsai', emoji: '🪴', name: 'Bonsai Tree', basePrice: 110, tier: 'mid' },
+    { id: 'clock', emoji: '🕰️', name: 'Desk Clock', basePrice: 120, tier: 'mid' },
+    { id: 'bookshelf', emoji: '📚', name: 'Bookshelf', basePrice: 130, tier: 'mid' },
+    // Premium items
+    { id: 'headphones', emoji: '🎧', name: 'Headphones', basePrice: 150, tier: 'premium' },
+    { id: 'trophy', emoji: '🏆', name: 'Trophy', basePrice: 200, tier: 'premium' },
+    { id: 'fairylights', emoji: '✨', name: 'Fairy Lights', basePrice: 180, tier: 'premium' },
+    { id: 'teddy', emoji: '🧸', name: 'Teddy Bear', basePrice: 175, tier: 'premium' },
+    { id: 'easel', emoji: '🎨', name: 'Art Easel', basePrice: 200, tier: 'premium' },
+    // Legendary items
+    { id: 'fishtank', emoji: '🐠', name: 'Fish Tank', basePrice: 300, tier: 'legendary' },
+    { id: 'discoball', emoji: '🪩', name: 'Disco Ball', basePrice: 350, tier: 'legendary' },
+    { id: 'globe', emoji: '🌍', name: 'Globe', basePrice: 400, tier: 'legendary' },
+    { id: 'crystalball', emoji: '🔮', name: 'Crystal Ball', basePrice: 500, tier: 'legendary' },
   ]
 
   const items = baseItems.map(item => ({
@@ -2350,37 +2511,51 @@ function ShopScreen({ player, onNavigate, onUpdateCoins }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-6">
-        {items.map((item) => {
-          const owned = player.desk_items?.includes(item.emoji)
-          const canAfford = player.coins >= item.price
-
-          return (
-            <div
-              key={item.id}
-              className="bg-white rounded-xl shadow-lg p-3 sm:p-6 hover:shadow-xl transition"
-            >
-              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">{item.emoji}</div>
-              <h3 className="font-bold text-gray-900 mb-1 sm:mb-2 text-sm sm:text-base">{item.name}</h3>
-              <p className="text-lg sm:text-2xl font-bold text-sunshine mb-2 sm:mb-4">{item.price} 💰</p>
-
-              <button
-                onClick={() => handleBuy(item)}
-                disabled={owned || !canAfford}
-                className={`w-full py-2 rounded-lg font-bold transition ${
-                  owned
-                    ? 'bg-day text-forest cursor-default'
-                    : canAfford
-                      ? 'bg-forest text-white hover:opacity-90'
-                      : 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                }`}
-              >
-                {owned ? '✓ Owned' : 'Buy'}
-              </button>
+      {[
+        { tier: 'starter', label: 'Starter', color: 'text-forest' },
+        { tier: 'mid', label: 'Office Essentials', color: 'text-sky' },
+        { tier: 'premium', label: 'Premium', color: 'text-earth' },
+        { tier: 'legendary', label: 'Legendary', color: 'text-purple-600' },
+      ].map(({ tier, label, color }) => {
+        const tierItems = items.filter(i => i.tier === tier)
+        return (
+          <div key={tier} className="mb-4 sm:mb-8">
+            <h2 className={`text-base sm:text-lg font-bold ${color} mb-2 sm:mb-3`}>
+              {tier === 'legendary' ? '⭐ ' : ''}{label}
+              {tier === 'legendary' ? ' ⭐' : ''}
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
+              {tierItems.map((item) => {
+                const owned = player.desk_items?.includes(item.emoji)
+                const canAfford = player.coins >= item.price
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-white rounded-xl shadow-md p-2.5 sm:p-4 hover:shadow-lg transition ${tier === 'legendary' ? 'ring-1 ring-purple-200' : ''}`}
+                  >
+                    <div className="text-2xl sm:text-4xl mb-1.5 sm:mb-3 text-center">{item.emoji}</div>
+                    <h3 className="font-bold text-gray-900 mb-0.5 sm:mb-1 text-xs sm:text-sm text-center">{item.name}</h3>
+                    <p className="text-sm sm:text-lg font-bold text-sunshine mb-1.5 sm:mb-3 text-center">{item.price} 💰</p>
+                    <button
+                      onClick={() => handleBuy(item)}
+                      disabled={owned || !canAfford}
+                      className={`w-full py-1.5 sm:py-2 rounded-lg font-bold text-xs sm:text-sm transition ${
+                        owned
+                          ? 'bg-day text-forest cursor-default'
+                          : canAfford
+                            ? 'bg-forest text-white hover:opacity-90'
+                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                      }`}
+                    >
+                      {owned ? '✓ Owned' : 'Buy'}
+                    </button>
+                  </div>
+                )
+              })}
             </div>
-          )
-        })}
-      </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
