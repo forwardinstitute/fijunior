@@ -1867,7 +1867,7 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
             <p className="text-gray-600">Relax with word games and puzzles!</p>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
+          <div className="grid grid-cols-2 gap-3 sm:gap-6">
             <button
               onClick={() => setGame('scramble')}
               className="bg-gradient-to-br from-purple-400 to-purple-500 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
@@ -1886,11 +1886,19 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
             </button>
             <button
               onClick={() => setGame('oddoneout')}
-              className="bg-gradient-to-br from-earth to-earth/80 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition col-span-2 md:col-span-1"
+              className="bg-gradient-to-br from-earth to-earth/80 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
             >
               <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">🔍</div>
               <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Odd One Out</h3>
               <p className="text-orange-100 text-xs sm:text-base hidden sm:block">Spot the one that doesn't belong!</p>
+            </button>
+            <button
+              onClick={() => setGame('lyrics')}
+              className="bg-gradient-to-br from-pink-400 to-pink-500 text-white p-4 sm:p-8 rounded-xl shadow-lg hover:shadow-xl transition"
+            >
+              <div className="text-3xl sm:text-5xl mb-2 sm:mb-4">🎵</div>
+              <h3 className="text-base sm:text-2xl font-bold mb-1 sm:mb-2">Lyrics Quiz</h3>
+              <p className="text-pink-100 text-xs sm:text-base hidden sm:block">Finish the lyric!</p>
             </button>
           </div>
         </div>
@@ -1900,6 +1908,8 @@ function BreakRoomScreen({ player, onNavigate, onUpdateCoins }) {
         <TriviaGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
       ) : game === 'oddoneout' ? (
         <OddOneOutGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
+      ) : game === 'lyrics' ? (
+        <LyricsQuizGame onBack={() => setGame(null)} onUpdateCoins={onUpdateCoins} playerAge={player.age} />
       ) : null}
     </div>
   )
@@ -2436,6 +2446,175 @@ function OddOneOutGame({ onBack, onUpdateCoins, playerAge = 12 }) {
             </p>
             <button onClick={nextRound} className="w-full py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">
               {current + 1 >= sets.length ? 'See Results' : 'Next Puzzle →'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// LYRICS QUIZ GAME
+function LyricsQuizGame({ onBack, onUpdateCoins, playerAge = 12 }) {
+  const ALL_SONGS = [
+    // Taylor Swift
+    { artist: 'Taylor Swift', song: 'Shake It Off', lyric: "Cause the players gonna play, play, play, play, play", blank: "And the haters gonna ___", answer: 'hate', options: ['hate', 'wait', 'skate', 'late'] },
+    { artist: 'Taylor Swift', song: 'Love Story', lyric: "Romeo take me somewhere we can be alone", blank: "I'll be waiting, all there's left to do is ___", answer: 'run', options: ['run', 'cry', 'hide', 'dance'] },
+    { artist: 'Taylor Swift', song: 'Blank Space', lyric: "Nice to meet you, where you been?", blank: "I could show you incredible ___", answer: 'things', options: ['things', 'times', 'dreams', 'sights'] },
+    { artist: 'Taylor Swift', song: 'Anti-Hero', lyric: "I have this thing where I get older but just never wiser", blank: "It's me, hi, I'm the ___, it's me", answer: 'problem', options: ['problem', 'reason', 'answer', 'person'] },
+    { artist: 'Taylor Swift', song: 'Cruel Summer', lyric: "Fever dream high in the quiet of the night", blank: "You know that I caught it, bad blood, ___", answer: 'karma', options: ['karma', 'fever', 'thunder', 'midnight'] },
+    { artist: 'Taylor Swift', song: 'Cruel Summer', lyric: "And it's new, the shape of your body", blank: "It's blue, the feeling I've ___", answer: 'got', options: ['got', 'lost', 'found', 'known'] },
+    // Olivia Rodrigo
+    { artist: 'Olivia Rodrigo', song: 'good 4 u', lyric: "Well, good for you, I guess you moved on real easily", blank: "You look happy and ___, not me", answer: 'healthy', options: ['healthy', 'wealthy', 'pretty', 'friendly'] },
+    { artist: 'Olivia Rodrigo', song: 'drivers license', lyric: "I got my driver's license last week", blank: "Just like we always talked ___", answer: 'about', options: ['about', 'before', 'together', 'forever'] },
+    { artist: 'Olivia Rodrigo', song: 'deja vu', lyric: "Car rides to Malibu, strawberry ice cream", blank: "One spoon for two, and trading ___ with you", answer: 'jackets', options: ['jackets', 'secrets', 'stories', 'numbers'] },
+    // Harry Styles
+    { artist: 'Harry Styles', song: 'Watermelon Sugar', lyric: "Tastes like strawberries on a summer evenin'", blank: "And it sounds just like a ___", answer: 'song', options: ['song', 'dream', 'wish', 'wave'] },
+    { artist: 'Harry Styles', song: 'As It Was', lyric: "Holding me back, gravity's holding me back", blank: "I want you to hold out the palm of your ___", answer: 'hand', options: ['hand', 'heart', 'soul', 'love'] },
+    { artist: 'Harry Styles', song: 'Sign of the Times', lyric: "Just stop your crying, it's a sign of the times", blank: "Welcome to the final show, hope you're wearing your best ___", answer: 'clothes', options: ['clothes', 'smile', 'shoes', 'crown'] },
+    // Meghan Trainor
+    { artist: 'Meghan Trainor', song: 'All About That Bass', lyric: "Because you know I'm all about that bass", blank: "'Bout that bass, no ___", answer: 'treble', options: ['treble', 'trouble', 'problem', 'wobble'] },
+    { artist: 'Meghan Trainor', song: 'Me Too', lyric: "If I was you, I'd wanna be me too", blank: "I'd wanna be me ___", answer: 'too', options: ['too', 'now', 'more', 'twice'] },
+    // Miley Cyrus
+    { artist: 'Miley Cyrus', song: 'Flowers', lyric: "I can buy myself flowers, write my name in the sand", blank: "Talk to myself for hours, say things you don't ___", answer: 'understand', options: ['understand', 'remember', 'believe', 'appreciate'] },
+    { artist: 'Miley Cyrus', song: 'Party in the U.S.A.', lyric: "So I put my hands up, they're playing my song", blank: "The butterflies fly away, nodding my head like ___", answer: 'yeah', options: ['yeah', 'wow', 'hey', 'yay'] },
+    { artist: 'Miley Cyrus', song: 'Wrecking Ball', lyric: "I came in like a wrecking ball", blank: "I never hit so hard in ___", answer: 'love', options: ['love', 'life', 'pain', 'vain'] },
+    // SIX the Musical
+    { artist: 'SIX', song: 'Ex-Wives', lyric: "Divorced, beheaded, died", blank: "Divorced, beheaded, ___", answer: 'survived', options: ['survived', 'revived', 'arrived', 'thrived'] },
+    { artist: 'SIX', song: 'Don\'t Lose Ur Head', lyric: "Sorry not sorry 'bout what I said", blank: "Don't lose ur ___", answer: 'head', options: ['head', 'mind', 'cool', 'heart'] },
+    { artist: 'SIX', song: 'Six', lyric: "All you ever hear and read about", blank: "Is our ___ to the crown", answer: 'connection', options: ['connection', 'devotion', 'reaction', 'attraction'] },
+    // Dua Lipa
+    { artist: 'Dua Lipa', song: 'Levitating', lyric: "If you wanna run away with me, I know a galaxy", blank: "And I can take you for a ride, I had a premonition that we fell into a ___", answer: 'rhythm', options: ['rhythm', 'vision', 'feeling', 'mission'] },
+    { artist: 'Dua Lipa', song: 'Don\'t Start Now', lyric: "If you don't wanna see me dancing with somebody", blank: "Don't show up, don't come out, don't ___ now", answer: 'start', options: ['start', 'stop', 'cry', 'call'] },
+    // Lizzo
+    { artist: 'Lizzo', song: 'About Damn Time', lyric: "In a minute, I'mma need a sentimental man or woman", blank: "To pump me up, feeling fussy, walking in my ___ shoes", answer: 'Balenciussy', options: ['favourite', 'sparkly', 'fancy', 'golden'] },
+    { artist: 'Lizzo', song: 'Good As Hell', lyric: "If he don't love you anymore", blank: "Just walk your fine self out the ___", answer: 'door', options: ['door', 'room', 'way', 'house'] },
+  ]
+
+  // Shuffle and pick 10 questions
+  const [questions] = useState(() => {
+    const shuffled = [...ALL_SONGS]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+    // Shuffle options for each question too
+    return shuffled.slice(0, 10).map(q => {
+      const opts = [...q.options]
+      for (let i = opts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [opts[i], opts[j]] = [opts[j], opts[i]]
+      }
+      return { ...q, options: opts }
+    })
+  })
+
+  const [current, setCurrent] = useState(0)
+  const [score, setScore] = useState(0)
+  const [selected, setSelected] = useState(null)
+  const [gameOver, setGameOver] = useState(false)
+  const [coinsPaid, setCoinsPaid] = useState(false)
+  const [streak, setStreak] = useState(0)
+
+  const handleAnswer = (option) => {
+    if (selected !== null) return
+    setSelected(option)
+    if (option === questions[current].answer) {
+      setScore(score + 1)
+      setStreak(streak + 1)
+    } else {
+      setStreak(0)
+    }
+  }
+
+  const nextQuestion = () => {
+    if (current + 1 >= questions.length) {
+      setGameOver(true)
+    } else {
+      setCurrent(current + 1)
+      setSelected(null)
+    }
+  }
+
+  const ageBonus = playerAge >= 13 ? 1 : playerAge >= 10 ? 1.2 : 1.5
+  const totalCoins = Math.round(score * 5 * ageBonus)
+
+  useEffect(() => {
+    if (gameOver && !coinsPaid) {
+      setCoinsPaid(true)
+      onUpdateCoins(totalCoins > 0 ? totalCoins : 2)
+    }
+  }, [gameOver])
+
+  if (gameOver) {
+    const messages = score >= 9 ? 'Pop royalty! 👑' : score >= 7 ? 'Total bop! 🎤' : score >= 5 ? 'Not bad! 🎧' : 'Keep listening! 🎵'
+    return (
+      <div className="max-w-2xl mx-auto">
+        <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+        <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8 text-center">
+          <div className="text-6xl mb-4">🎵</div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-night mb-2">{messages}</h2>
+          <p className="text-lg sm:text-xl text-gray-600 mb-2">{score} / {questions.length} correct</p>
+          {streak >= 3 && <p className="text-sm text-pink-500 mb-2">Best streak: {streak} in a row!</p>}
+          <p className="text-lg font-bold text-sunshine mb-6">{totalCoins} coins earned</p>
+          <button onClick={onBack} className="px-6 py-3 bg-forest text-white rounded-lg font-bold hover:opacity-90 transition">Back to Break Room</button>
+        </div>
+      </div>
+    )
+  }
+
+  const q = questions[current]
+
+  return (
+    <div className="max-w-2xl mx-auto">
+      <button onClick={onBack} className="mb-4 sm:mb-6 px-3 py-1.5 sm:px-4 sm:py-2 bg-day text-night rounded-lg hover:bg-gray-200 transition text-sm sm:text-base">← Back</button>
+      <div className="bg-white rounded-xl shadow-lg p-4 sm:p-8">
+        <div className="flex justify-between items-center mb-4 sm:mb-6">
+          <span className="text-xs sm:text-sm font-semibold text-pink-500 bg-pink-50 px-2 sm:px-3 py-1 rounded-full">{current + 1}/{questions.length}</span>
+          <span className="text-xs sm:text-sm font-semibold text-sunshine bg-sunshine/20 px-2 sm:px-3 py-1 rounded-full">Score: {score}</span>
+        </div>
+
+        {/* Song info */}
+        <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <p className="text-xs sm:text-sm text-gray-500 mb-1">{q.artist} - {q.song}</p>
+          <p className="text-sm sm:text-base text-gray-700 italic mb-2">"{q.lyric}"</p>
+          <p className="text-base sm:text-lg font-bold text-night">"{q.blank}"</p>
+        </div>
+
+        {/* Answer options */}
+        <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4 sm:mb-6">
+          {q.options.map((option, i) => {
+            let classes = 'p-3 sm:p-4 rounded-lg font-bold text-sm sm:text-base transition border-2 text-center '
+            if (selected === null) {
+              classes += 'border-pink-200 hover:border-pink-400 hover:bg-pink-50 cursor-pointer'
+            } else if (option === q.answer) {
+              classes += 'border-green-500 bg-green-50 text-green-800'
+            } else if (option === selected) {
+              classes += 'border-red-400 bg-red-50 text-red-700'
+            } else {
+              classes += 'border-gray-200 opacity-40'
+            }
+            return (
+              <button key={i} onClick={() => handleAnswer(option)} disabled={selected !== null} className={classes}>
+                {option}
+              </button>
+            )
+          })}
+        </div>
+
+        {selected !== null && (
+          <div className="animate-fade-in">
+            {selected === q.answer ? (
+              <p className="text-center text-green-600 font-bold mb-3">
+                {streak >= 3 ? `${streak} in a row! 🔥` : 'Correct! 🎉'}
+              </p>
+            ) : (
+              <p className="text-center text-red-500 font-bold mb-3">
+                It was "{q.answer}"! 😅
+              </p>
+            )}
+            <button onClick={nextQuestion} className="w-full py-2.5 sm:py-3 bg-pink-500 text-white rounded-lg font-bold hover:bg-pink-600 transition">
+              {current + 1 >= questions.length ? 'See Results 🎵' : 'Next Lyric →'}
             </button>
           </div>
         )}
